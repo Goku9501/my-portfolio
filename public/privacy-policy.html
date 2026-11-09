@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Way App | Sagar Khatri</title>
+  <meta name="description"
+    content="Privacy Policy for the Way mobile application — how we collect, use, store, and share your information." />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap"
+    rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            pixel: ['Silkscreen', 'monospace'],
+            hand: ['Caveat', 'cursive'],
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
+
+    .notebook-paper {
+      background-color: #FAF8F4;
+      background-image: repeating-linear-gradient(to bottom, transparent 0px, transparent 27px, rgba(24, 24, 27, 0.06) 27px, rgba(24, 24, 27, 0.06) 28px);
+    }
+
+    .dark .notebook-paper {
+      background-color: #111318;
+      background-image: repeating-linear-gradient(to bottom, transparent 0px, transparent 27px, rgba(255, 255, 255, 0.05) 27px, rgba(255, 255, 255, 0.05) 28px);
+    }
+
+    .font-pixel-display {
+      font-family: 'Silkscreen', monospace;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+
+    .font-handwritten {
+      font-family: 'Caveat', cursive;
+    }
+
+    .figma-box {
+      position: relative;
+      border: 2px solid #2563EB;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .dark .figma-box {
+      background: rgba(24, 24, 27, 0.75);
+    }
+
+    .figma-handle {
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      background: #FFFFFF;
+      border: 2px solid #2563EB;
+      z-index: 10;
+    }
+
+    .figma-handle.tl {
+      top: -5px;
+      left: -5px;
+    }
+
+    .figma-handle.tr {
+      top: -5px;
+      right: -5px;
+    }
+
+    .figma-handle.bl {
+      bottom: -5px;
+      left: -5px;
+    }
+
+    .figma-handle.br {
+      bottom: -5px;
+      right: -5px;
+    }
+
+    .masking-tape {
+      position: absolute;
+      width: 68px;
+      height: 20px;
+      background: rgba(253, 230, 138, 0.65);
+      border: 1px solid rgba(217, 119, 6, 0.18);
+      backdrop-filter: blur(2px);
+      z-index: 15;
+    }
+
+    .policy-section {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .policy-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section-num {
+      font-family: 'Silkscreen', monospace;
+      letter-spacing: -0.03em;
+    }
+
+    .accordion-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+    }
+
+    .accordion-body.open {
+      max-height: 900px;
+    }
+
+    .accordion-icon {
+      transition: transform 0.3s ease;
+    }
+
+    .accordion-item.open .accordion-icon {
+      transform: rotate(45deg);
+    }
+  </style>
+</head>
+
+<body
+  class="notebook-paper text-zinc-900 dark:text-zinc-100 transition-colors duration-300 selection:bg-yellow-300 selection:text-zinc-900">
+
+  <!-- HEADER -->
+  <header
+    class="sticky top-0 z-40 border-b border-zinc-300/80 dark:border-zinc-800 bg-[#FAF8F4]/95 dark:bg-[#111318]/95 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <a href="index.html"
+          class="w-7 h-7 rounded-full bg-pink-500 border-2 border-zinc-900 dark:border-white flex items-center justify-center text-white font-bold text-[11px] shadow-sm hover:scale-105 transition-transform"
+          title="Sagar Khatri">SK</a>
+        <nav class="hidden md:flex items-center gap-1 text-xs font-mono font-bold tracking-tight">
+          <a href="index.html#hero"
+            class="px-3 py-1.5 rounded-md hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 transition-colors"><span>🏠</span><span>HOME</span></a>
+          <a href="index.html#about"
+            class="px-3 py-1.5 rounded-md hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 transition-colors"><span>👤</span><span>ABOUT</span></a>
+          <a href="index.html#projects"
+            class="px-3 py-1.5 rounded-md hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 transition-colors"><span>🗂️</span><span>CASE
+              STUDY</span></a>
+          <a href="index.html#experience"
+            class="px-3 py-1.5 rounded-md hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 transition-colors"><span>💼</span><span>EXPERIENCE</span></a>
+          <a href="index.html#skills"
+            class="px-3 py-1.5 rounded-md hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 transition-colors"><span>🛠️</span><span>SKILLS</span></a>
+          <span
+            class="px-3 py-1.5 rounded-md bg-yellow-300 text-zinc-900 border border-zinc-900/20 flex items-center gap-1.5 shadow-sm"><span>🔒</span><span>PRIVACY</span></span>
+        </nav>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="hidden sm:flex items-center gap-1.5 mr-1">
+          <span class="w-3.5 h-3.5 rounded-full bg-yellow-400 border border-zinc-900/20 inline-block"></span>
+          <span class="w-3.5 h-3.5 rounded-full bg-pink-500  border border-zinc-900/20 inline-block"></span>
+          <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 border border-zinc-900/20 inline-block"></span>
+        </div>
+        <a href="index.html"
+          class="px-3 py-1.5 rounded-md text-xs font-mono font-bold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-300 shadow-[2px_2px_0px_#18181b] dark:shadow-[2px_2px_0px_#e4e4e7] hover:translate-y-0.5 transition-all">
+          &larr; Portfolio
+        </a>
+        <button id="themeToggleBtn" type="button" aria-label="Toggle color theme"
+          class="p-1.5 rounded-md border-2 border-zinc-900 dark:border-zinc-300 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 shadow-[2px_2px_0px_#18181b]">
+          <svg id="sunIcon" class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg id="moonIcon" class="w-4 h-4 block dark:hidden text-zinc-800" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+        <button id="mobileMenuBtn" type="button" aria-label="Toggle mobile menu"
+          class="md:hidden p-1.5 rounded-md border-2 border-zinc-900 dark:border-zinc-300 bg-white dark:bg-zinc-800">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div id="mobileMenu"
+      class="hidden md:hidden border-t border-zinc-300 dark:border-zinc-800 bg-[#FAF8F4] dark:bg-[#111318] px-4 py-3 space-y-1 font-mono text-xs">
+      <a href="index.html#hero" class="block px-3 py-2 rounded hover:bg-yellow-200 dark:hover:bg-zinc-800">🏠 HOME</a>
+      <a href="index.html#about" class="block px-3 py-2 rounded hover:bg-yellow-200 dark:hover:bg-zinc-800">👤 ABOUT
+        &amp; BIO</a>
+      <a href="index.html#projects" class="block px-3 py-2 rounded hover:bg-yellow-200 dark:hover:bg-zinc-800">🗂️ CASE
+        STUDY</a>
+      <a href="index.html#experience" class="block px-3 py-2 rounded hover:bg-yellow-200 dark:hover:bg-zinc-800">💼
+        EXPERIENCE</a>
+      <a href="index.html#skills" class="block px-3 py-2 rounded hover:bg-yellow-200 dark:hover:bg-zinc-800">🛠️
+        SKILLS</a>
+      <span class="block px-3 py-2 rounded bg-yellow-200 dark:bg-zinc-800 font-bold">🔒 PRIVACY POLICY</span>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 pt-12 pb-28 space-y-12">
+
+    <!-- HERO -->
+    <section class="relative text-center space-y-4 policy-section">
+      <div class="font-handwritten text-2xl text-zinc-600 dark:text-zinc-400">legal stuff, made readable ✦</div>
+      <div class="figma-box inline-block px-10 py-5 shadow-sm">
+        <span class="figma-handle tl"></span><span class="figma-handle tr"></span>
+        <span class="figma-handle bl"></span><span class="figma-handle br"></span>
+        <h1
+          class="font-pixel-display text-4xl sm:text-6xl font-bold tracking-tight text-zinc-900 dark:text-white select-none">
+          PRIVACY POLICY</h1>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-3 pt-1">
+        <span
+          class="px-3.5 py-1.5 rounded-md bg-amber-300 text-zinc-900 font-handwritten text-lg font-bold shadow-sm -rotate-1 border border-amber-500/40">App:
+          Way 📱</span>
+        <span
+          class="px-3.5 py-1.5 rounded-md bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 font-mono text-[11px] font-bold tracking-wide flex items-center gap-2 shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span>Last updated: October 22, 2026</span>
+        </span>
+        <span
+          class="px-3.5 py-1.5 rounded-md bg-blue-200 text-zinc-900 font-handwritten text-lg font-bold shadow-sm rotate-1 border border-blue-400/40">Mobile
+          App 🔒</span>
+      </div>
+      <p class="max-w-2xl mx-auto text-sm sm:text-base text-zinc-600 dark:text-zinc-300 leading-relaxed pt-2">
+        This Privacy Policy explains how <strong class="text-zinc-900 dark:text-white">Way</strong> collects, uses,
+        stores, and shares information when you use the Way mobile application. We believe in clear, honest
+        communication about your data.
+      </p>
+    </section>
+
+    <!-- TL;DR CARDS -->
+    <section class="policy-section">
+      <div class="text-center mb-6"><span class="font-handwritten text-xl text-zinc-500 dark:text-zinc-400">tl;dr — the
+          highlights</span></div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div
+          class="p-5 rounded-xl bg-blue-100 dark:bg-blue-950/50 border border-blue-300 dark:border-blue-800 relative">
+          <div class="masking-tape -top-2.5 left-8 -rotate-1"></div>
+          <div class="text-2xl mb-2">📱</div>
+          <div class="font-mono text-xs font-bold uppercase text-blue-900 dark:text-blue-300">What We Collect</div>
+          <p class="text-xs text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed">Phone number, profile info, location,
+            photos, device tokens, and anonymised analytics.</p>
+        </div>
+        <div
+          class="p-5 rounded-xl bg-amber-100 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 relative">
+          <div class="masking-tape -top-2.5 left-8 rotate-1"></div>
+          <div class="text-2xl mb-2">🎯</div>
+          <div class="font-mono text-xs font-bold uppercase text-amber-900 dark:text-amber-300">Why We Use It</div>
+          <p class="text-xs text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed">To authenticate you, power app
+            features, send notifications, and improve the service.</p>
+        </div>
+        <div
+          class="p-5 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 relative">
+          <div class="masking-tape -top-2.5 left-8 -rotate-1"></div>
+          <div class="text-2xl mb-2">🛡️</div>
+          <div class="font-mono text-xs font-bold uppercase text-emerald-900 dark:text-emerald-300">Your Control</div>
+          <p class="text-xs text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed">Manage permissions in device
+            settings. Request deletion anytime via the app or email.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACCORDION SECTIONS -->
+    <section class="policy-section space-y-4">
+      <div class="text-center mb-2"><span class="font-handwritten text-xl text-zinc-500 dark:text-zinc-400">the full
+          details ↓</span></div>
+
+      <!-- 01 -->
+      <div
+        class="accordion-item rounded-2xl border-2 border-zinc-900 dark:border-zinc-700 bg-white/85 dark:bg-zinc-900/90 shadow-[4px_4px_0px_#18181b] dark:shadow-[4px_4px_0px_#27272a] overflow-hidden">
+        <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left gap-4">
+          <div class="flex items-center gap-4">
+            <span
+              class="section-num text-lg sm:text-2xl font-bold px-3 py-1 rounded-md bg-yellow-300 text-zinc-900 border border-zinc-900 shrink-0">01</span>
+            <span class="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Information We Collect</span>
+          </div>
+          <svg class="accordion-icon w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <div class="accordion-body open px-5 pb-5">
+          <div
+            class="border-l-2 border-yellow-400 pl-4 space-y-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+            <div>
+              <div
+                class="font-mono text-xs font-bold uppercase text-zinc-900 dark:text-white flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-pink-500 inline-block"></span>Phone Number &amp; Authentication
+                Data
+              </div>
+              <p>Used to verify your identity and provide secure sign-in. Processed through our authentication provider
+                and never sold to third parties.</p>
+            </div>
+            <div>
+              <div
+                class="font-mono text-xs font-bold uppercase text-zinc-900 dark:text-white flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>Profile Information
+              </div>
+              <p>Name, profile details, and profile photo that you voluntarily provide to personalise your experience.
+              </p>
+            </div>
+            <div>
+              <div
+                class="font-mono text-xs font-bold uppercase text-zinc-900 dark:text-white flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>Location Data
+              </div>
+              <p>Way collects approximate or precise location (based on your permission) while the app is in the
+                foreground to power location-based features. Background location is only collected if you grant "Always
+                Allow" and only when a feature requires it.</p>
+            </div>
+            <div>
+              <div
+                class="font-mono text-xs font-bold uppercase text-zinc-900 dark:text-white flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>Photos &amp; Uploads
+              </div>
+              <p>You may upload photos (e.g., profile pictures or in-app content). Files are stored securely on our
+                cloud storage provider and used solely to deliver the feature you requested.</p>
+            </div>
+            <div>
+              <div
+                class="font-mono text-xs font-bold uppercase text-zinc-900 dark:text-white flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-purple-500 inline-block"></span>Device &amp; Notification Tokens
+              </div>
+              <p>Device or push-notification tokens are collected to deliver timely and relevant push notifications to
+                your device.</p>
+            </div>
+            <div>
+              <div
+                class="font-mono text-xs font-bold uppercase text-zinc-900 dark:text-white flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>Analytics &amp; Diagnostics
+              </div>
+              <p>Crash reports, performance metrics, and anonymised usage data (e.g., feature interactions, session
+                duration) to identify bugs and improve app quality via our analytics and crash-reporting SDKs.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 02 -->
+      <div
+        class="accordion-item rounded-2xl border-2 border-zinc-900 dark:border-zinc-700 bg-white/85 dark:bg-zinc-900/90 shadow-[4px_4px_0px_#18181b] dark:shadow-[4px_4px_0px_#27272a] overflow-hidden">
+        <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left gap-4">
+          <div class="flex items-center gap-4">
+            <span
+              class="section-num text-lg sm:text-2xl font-bold px-3 py-1 rounded-md bg-pink-400 text-white border border-zinc-900 shrink-0">02</span>
+            <span class="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">How We Use Information</span>
+          </div>
+          <svg class="accordion-icon w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <div class="accordion-body px-5 pb-5">
+          <div
+            class="border-l-2 border-pink-400 pl-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-3">
+            <p>We use collected information to:</p>
+            <ul class="space-y-2">
+              <li class="flex items-start gap-2"><span class="text-pink-500 font-bold mt-0.5">→</span><span><strong
+                    class="text-zinc-900 dark:text-white">Provide &amp; maintain Way</strong> — operate core features
+                  and keep the app running reliably.</span></li>
+              <li class="flex items-start gap-2"><span class="text-pink-500 font-bold mt-0.5">→</span><span><strong
+                    class="text-zinc-900 dark:text-white">Authenticate users</strong> — verify your identity and keep
+                  your account secure.</span></li>
+              <li class="flex items-start gap-2"><span class="text-pink-500 font-bold mt-0.5">→</span><span><strong
+                    class="text-zinc-900 dark:text-white">Support app features</strong> — power location-based
+                  functionality, profile management, uploads, and other in-app features.</span></li>
+              <li class="flex items-start gap-2"><span class="text-pink-500 font-bold mt-0.5">→</span><span><strong
+                    class="text-zinc-900 dark:text-white">Deliver notifications</strong> — send push notifications and
+                  in-app alerts relevant to your activity.</span></li>
+              <li class="flex items-start gap-2"><span class="text-pink-500 font-bold mt-0.5">→</span><span><strong
+                    class="text-zinc-900 dark:text-white">Protect accounts</strong> — detect fraud, abuse, and security
+                  threats.</span></li>
+              <li class="flex items-start gap-2"><span class="text-pink-500 font-bold mt-0.5">→</span><span><strong
+                    class="text-zinc-900 dark:text-white">Troubleshoot &amp; improve</strong> — analyse diagnostics and
+                  usage patterns to fix bugs and enhance the experience.</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03 -->
+      <div
+        class="accordion-item rounded-2xl border-2 border-zinc-900 dark:border-zinc-700 bg-white/85 dark:bg-zinc-900/90 shadow-[4px_4px_0px_#18181b] dark:shadow-[4px_4px_0px_#27272a] overflow-hidden">
+        <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left gap-4">
+          <div class="flex items-center gap-4">
+            <span
+              class="section-num text-lg sm:text-2xl font-bold px-3 py-1 rounded-md bg-blue-600 text-white border border-zinc-900 shrink-0">03</span>
+            <span class="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Sharing of Information</span>
+          </div>
+          <svg class="accordion-icon w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <div class="accordion-body px-5 pb-5">
+          <div
+            class="border-l-2 border-blue-500 pl-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-4">
+            <p>We do <strong class="text-zinc-900 dark:text-white">not sell your personal information</strong>. Data may
+              be processed by trusted service providers that support the app:</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div
+                class="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 font-mono text-xs space-y-1">
+                <div class="font-bold text-blue-900 dark:text-blue-300">🔧 Backend &amp; Hosting</div>
+                <div class="text-zinc-600 dark:text-zinc-400">Cloud infrastructure for app data and API services.</div>
+              </div>
+              <div
+                class="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 font-mono text-xs space-y-1">
+                <div class="font-bold text-blue-900 dark:text-blue-300">🔐 Authentication</div>
+                <div class="text-zinc-600 dark:text-zinc-400">Phone verification and secure sign-in provider.</div>
+              </div>
+              <div
+                class="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 font-mono text-xs space-y-1">
+                <div class="font-bold text-blue-900 dark:text-blue-300">📦 File Storage</div>
+                <div class="text-zinc-600 dark:text-zinc-400">Secure cloud storage for uploaded photos and media.</div>
+              </div>
+              <div
+                class="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 font-mono text-xs space-y-1">
+                <div class="font-bold text-blue-900 dark:text-blue-300">🔔 Push Notifications</div>
+                <div class="text-zinc-600 dark:text-zinc-400">Notification delivery service (e.g., FCM).</div>
+              </div>
+              <div
+                class="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 font-mono text-xs space-y-1">
+                <div class="font-bold text-blue-900 dark:text-blue-300">📊 Analytics</div>
+                <div class="text-zinc-600 dark:text-zinc-400">Usage analytics to understand feature engagement.</div>
+              </div>
+              <div
+                class="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 font-mono text-xs space-y-1">
+                <div class="font-bold text-blue-900 dark:text-blue-300">🐛 Crash Reporting</div>
+                <div class="text-zinc-600 dark:text-zinc-400">Diagnostics provider to detect and resolve app errors.
+                </div>
+              </div>
+            </div>
+            <p>We may also disclose information when required by law, court order, or to protect the rights and safety
+              of users and the public.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 04 -->
+      <div
+        class="accordion-item rounded-2xl border-2 border-zinc-900 dark:border-zinc-700 bg-white/85 dark:bg-zinc-900/90 shadow-[4px_4px_0px_#18181b] dark:shadow-[4px_4px_0px_#27272a] overflow-hidden">
+        <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left gap-4">
+          <div class="flex items-center gap-4">
+            <span
+              class="section-num text-lg sm:text-2xl font-bold px-3 py-1 rounded-md bg-emerald-500 text-white border border-zinc-900 shrink-0">04</span>
+            <span class="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Data Storage &amp;
+              Security</span>
+          </div>
+          <svg class="accordion-icon w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <div class="accordion-body px-5 pb-5">
+          <div
+            class="border-l-2 border-emerald-500 pl-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-3">
+            <p>We implement appropriate technical and organisational security measures to protect your information.
+              These include:</p>
+            <ul class="space-y-2">
+              <li class="flex items-start gap-2"><span class="text-emerald-500 font-bold mt-0.5">✓</span><span><strong
+                    class="text-zinc-900 dark:text-white">Encryption in transit</strong> — all data between the app and
+                  our servers uses HTTPS/TLS.</span></li>
+              <li class="flex items-start gap-2"><span class="text-emerald-500 font-bold mt-0.5">✓</span><span><strong
+                    class="text-zinc-900 dark:text-white">Encryption at rest</strong> — stored data is encrypted using
+                  industry-standard methods.</span></li>
+              <li class="flex items-start gap-2"><span class="text-emerald-500 font-bold mt-0.5">✓</span><span><strong
+                    class="text-zinc-900 dark:text-white">Access controls</strong> — only authorised personnel and
+                  systems can access user data.</span></li>
+              <li class="flex items-start gap-2"><span class="text-emerald-500 font-bold mt-0.5">✓</span><span><strong
+                    class="text-zinc-900 dark:text-white">Secure authentication</strong> — phone-number OTP verification
+                  reduces account takeover risk.</span></li>
+            </ul>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 italic">No method of electronic storage or transmission
+              is 100% secure. While we strive to protect your data, we cannot guarantee absolute security.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 05 -->
+      <div
+        class="accordion-item rounded-2xl border-2 border-zinc-900 dark:border-zinc-700 bg-white/85 dark:bg-zinc-900/90 shadow-[4px_4px_0px_#18181b] dark:shadow-[4px_4px_0px_#27272a] overflow-hidden">
+        <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left gap-4">
+          <div class="flex items-center gap-4">
+            <span
+              class="section-num text-lg sm:text-2xl font-bold px-3 py-1 rounded-md bg-purple-500 text-white border border-zinc-900 shrink-0">05</span>
+            <span class="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Data Retention &amp;
+              Deletion</span>
+          </div>
+          <svg class="accordion-icon w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <div class="accordion-body px-5 pb-5">
+          <div
+            class="border-l-2 border-purple-500 pl-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-3">
+            <p>We retain your information for as long as necessary to provide the Way service and comply with legal
+              obligations.</p>
+            <div
+              class="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 font-mono text-xs space-y-2">
+              <div class="font-bold text-purple-900 dark:text-purple-300 uppercase mb-1">Retention Periods</div>
+              <div class="flex justify-between gap-4 border-b border-purple-200 dark:border-purple-800 pb-1">
+                <span>Account &amp; profile data</span><span class="text-zinc-900 dark:text-white font-bold">Until
+                  account deletion</span>
+              </div>
+              <div class="flex justify-between gap-4 border-b border-purple-200 dark:border-purple-800 pb-1">
+                <span>Location data</span><span class="text-zinc-900 dark:text-white font-bold">Session / feature use
+                  only</span>
+              </div>
+              <div class="flex justify-between gap-4 border-b border-purple-200 dark:border-purple-800 pb-1">
+                <span>Analytics &amp; diagnostics</span><span class="text-zinc-900 dark:text-white font-bold">Up to 24
+                  months</span>
+              </div>
+              <div class="flex justify-between gap-4"><span>Backups</span><span
+                  class="text-zinc-900 dark:text-white font-bold">Up to 90 days post-deletion</span></div>
+            </div>
+            <p><strong class="text-zinc-900 dark:text-white">Requesting deletion:</strong> Use the <em>Delete
+                Account</em> option in app Settings, or email <a href="mailto:khatrisagar415@gmail.com"
+                class="text-blue-600 dark:text-blue-400 underline">khatrisagar415@gmail.com</a>. Requests are processed
+              within <strong class="text-zinc-900 dark:text-white">30 days</strong>; backup copies may persist for up to
+              90 additional days.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 06 -->
+      <div
+        class="accordion-item rounded-2xl border-2 border-zinc-900 dark:border-zinc-700 bg-white/85 dark:bg-zinc-900/90 shadow-[4px_4px_0px_#18181b] dark:shadow-[4px_4px_0px_#27272a] overflow-hidden">
+        <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left gap-4">
+          <div class="flex items-center gap-4">
+            <span
+              class="section-num text-lg sm:text-2xl font-bold px-3 py-1 rounded-md bg-rose-500 text-white border border-zinc-900 shrink-0">06</span>
+            <span class="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Your Choices &amp;
+              Permissions</span>
+          </div>
+          <svg class="accordion-icon w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <div class="accordion-body px-5 pb-5">
+          <div
+            class="border-l-2 border-rose-500 pl-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-3">
+            <p>You can manage the following permissions in your device's <strong
+                class="text-zinc-900 dark:text-white">Settings</strong> at any time:</p>
+            <ul class="space-y-2">
+              <li class="flex items-start gap-2"><span class="text-rose-500 font-bold mt-0.5">→</span><span><strong
+                    class="text-zinc-900 dark:text-white">Location:</strong> Set to "While Using", "Always", or "Never"
+                  via Settings &rarr; Way. Disabling limits location-based features.</span></li>
+              <li class="flex items-start gap-2"><span class="text-rose-500 font-bold mt-0.5">→</span><span><strong
+                    class="text-zinc-900 dark:text-white">Photos &amp; Media:</strong> Control photo library access via
+                  Settings &rarr; Way &rarr; Photos.</span></li>
+              <li class="flex items-start gap-2"><span class="text-rose-500 font-bold mt-0.5">→</span><span><strong
+                    class="text-zinc-900 dark:text-white">Notifications:</strong> Toggle push notifications via Settings
+                  &rarr; Way &rarr; Notifications.</span></li>
+            </ul>
+            <p>To access, correct, or delete your personal information, contact us at <a
+                href="mailto:khatrisagar415@gmail.com"
+                class="text-blue-600 dark:text-blue-400 underline">khatrisagar415@gmail.com</a>.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 07 -->
+      <div
+        class="accordion-item rounded-2xl border-2 border-zinc-900 dark:border-zinc-700 bg-white/85 dark:bg-zinc-900/90 shadow-[4px_4px_0px_#18181b] dark:shadow-[4px_4px_0px_#27272a] overflow-hidden">
+        <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left gap-4">
+          <div class="flex items-center gap-4">
+            <span
+              class="section-num text-lg sm:text-2xl font-bold px-3 py-1 rounded-md bg-amber-400 text-zinc-900 border border-zinc-900 shrink-0">07</span>
+            <span class="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Children's Privacy</span>
+          </div>
+          <svg class="accordion-icon w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <div class="accordion-body px-5 pb-5">
+          <div
+            class="border-l-2 border-amber-400 pl-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-3">
+            <p>Way is intended for users who are <strong class="text-zinc-900 dark:text-white">13 years of age or
+                older</strong> (or the applicable minimum age in your jurisdiction). We do not knowingly collect
+              personal information from children under 13.</p>
+            <p>If you believe a child has provided personal information without parental consent, please contact us at
+              <a href="mailto:khatrisagar415@gmail.com"
+                class="text-blue-600 dark:text-blue-400 underline">khatrisagar415@gmail.com</a> and we will promptly
+              delete that information.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 08 -->
+      <div
+        class="accordion-item rounded-2xl border-2 border-zinc-900 dark:border-zinc-700 bg-white/85 dark:bg-zinc-900/90 shadow-[4px_4px_0px_#18181b] dark:shadow-[4px_4px_0px_#27272a] overflow-hidden">
+        <button class="accordion-toggle w-full flex items-center justify-between p-5 text-left gap-4">
+          <div class="flex items-center gap-4">
+            <span
+              class="section-num text-lg sm:text-2xl font-bold px-3 py-1 rounded-md bg-zinc-800 text-white border border-zinc-900 shrink-0">08</span>
+            <span class="font-bold text-base sm:text-lg text-zinc-900 dark:text-white">Changes to This Policy</span>
+          </div>
+          <svg class="accordion-icon w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <div class="accordion-body px-5 pb-5">
+          <div
+            class="border-l-2 border-zinc-400 pl-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-3">
+            <p>We may update this Privacy Policy when our data practices or legal requirements change. When revised, we
+              will update the <strong class="text-zinc-900 dark:text-white">"Last updated"</strong> date at the top of
+              this page.</p>
+            <p>For material changes, we may provide additional notice within the app. Continued use of Way after changes
+              take effect constitutes acceptance of the revised policy.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT CARD -->
+    <section class="policy-section">
+      <div
+        class="p-6 sm:p-10 rounded-2xl bg-zinc-900 dark:bg-zinc-950 text-white border-2 border-zinc-900 shadow-[6px_6px_0px_#2563EB] relative overflow-hidden">
+        <div class="masking-tape -top-2.5 left-10 -rotate-1"></div>
+        <div class="masking-tape -top-2.5 right-10 rotate-1"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+          <div class="space-y-3">
+            <div class="font-mono text-xs text-amber-400">&#9679; SECTION 09 &#8226; CONTACT</div>
+            <h2 class="font-pixel-display text-3xl sm:text-4xl text-white">CONTACT US</h2>
+            <p class="text-sm text-zinc-300 leading-relaxed">Questions about this policy or your data? We respond
+              promptly.</p>
+          </div>
+          <div class="space-y-3 font-mono text-sm">
+            <div class="flex items-center gap-3 p-3 rounded-lg bg-zinc-800 border border-zinc-700">
+              <span class="text-amber-400 text-lg">📱</span>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">App</div>
+                <div class="text-white font-bold">Way</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 rounded-lg bg-zinc-800 border border-zinc-700">
+              <span class="text-emerald-400 text-lg">👤</span>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Developer</div>
+                <div class="text-white font-bold">Sagar Khatri</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 rounded-lg bg-zinc-800 border border-zinc-700">
+              <span class="text-blue-400 text-lg">✉️</span>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Privacy Contact</div><a
+                  href="mailto:khatrisagar415@gmail.com"
+                  class="text-blue-400 hover:text-blue-300 underline transition-colors">khatrisagar415@gmail.com</a>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 rounded-lg bg-zinc-800 border border-zinc-700">
+              <span class="text-pink-400 text-lg">📍</span>
+              <div>
+                <div class="text-xs text-zinc-400 uppercase font-bold">Location</div>
+                <div class="text-white">Haryana / Rohtak, India</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BACK LINK -->
+    <div class="text-center policy-section">
+      <a href="index.html"
+        class="inline-flex items-center gap-2.5 px-6 py-3 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-mono text-xs font-bold tracking-wider uppercase shadow-[4px_4px_0px_#2563EB] hover:translate-y-0.5 transition-all">
+        &larr; Back to Portfolio
+      </a>
+      <p class="font-handwritten text-lg text-zinc-500 dark:text-zinc-400 mt-4">built with care by Sagar Khatri ✦</p>
+    </div>
+  </main>
+
+  <script>
+    // Dark Mode
+    const root = document.documentElement;
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) root.classList.add('dark');
+    document.getElementById('themeToggleBtn').addEventListener('click', () => {
+      root.classList.toggle('dark');
+      localStorage.setItem('theme', root.classList.contains('dark') ? 'dark' : 'light');
+    });
+
+    // Mobile menu
+    document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+      document.getElementById('mobileMenu').classList.toggle('hidden');
+    });
+
+    // Accordion
+    document.querySelectorAll('.accordion-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.accordion-item');
+        const body = item.querySelector('.accordion-body');
+        const isOpen = body.classList.contains('open');
+        document.querySelectorAll('.accordion-body').forEach(b => b.classList.remove('open'));
+        document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+        if (!isOpen) { body.classList.add('open'); item.classList.add('open'); }
+      });
+    });
+
+    // Scroll-in animation
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          setTimeout(() => e.target.classList.add('visible'), i * 80);
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.policy-section').forEach(el => obs.observe(el));
+  </script>
+</body>
+
+</html>
