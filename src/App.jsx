@@ -764,7 +764,7 @@ export default function App() {
                 <strong className="text-zinc-900 dark:text-white">
                   Flutter, Dart, Clean Architecture (BLoC/Cubit, Riverpod)
                 </strong>{' '}
-                &amp; <strong className="text-zinc-900 dark:text-white">Spring Boot</strong>{' '}
+                &amp; <strong className="text-zinc-900 dark:text-white">Python (FastAPI)</strong>{' '}
                 backends.
               </p>
 
@@ -794,22 +794,6 @@ export default function App() {
                   </svg>
                   <span>khatrisagar415@gmail.com</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => copyTextToClipboard('+918570885509', 'Phone')}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-3 rounded-lg font-mono text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-2 border-zinc-900 dark:border-zinc-600 shadow-[3px_3px_0px_#18181b] hover:bg-emerald-100 dark:hover:bg-zinc-700 transition-all"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                    />
-                  </svg>
-                  <span>+91 8570885509</span>
-                </button>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-mono text-zinc-600 dark:text-zinc-400 pt-1">
@@ -837,7 +821,7 @@ export default function App() {
               <div className="masking-tape -top-2.5 right-6 rotate-3"></div>
               <div className="h-20 rounded bg-gradient-to-br from-amber-400 to-rose-500 flex flex-col items-center justify-center text-white p-2">
                 <span className="text-xl">⚡</span>
-                <span className="font-mono text-[9px] font-bold mt-1">SPRING BOOT</span>
+                <span className="font-mono text-[9px] font-bold mt-1">FASTAPI</span>
               </div>
               <p className="font-handwritten text-xs text-zinc-600 dark:text-zinc-300 mt-1">
                 real-time api
@@ -918,7 +902,7 @@ export default function App() {
 
                 <div className="inline-flex items-center gap-1.5">
                   <span className="px-4 py-2 rounded-md bg-pink-500 text-white font-bold text-sm shadow-sm">
-                    Spring Boot &amp; REST APIs
+                    Python &amp; FastAPI
                   </span>
                   <span className="w-9 h-9 rounded-md bg-pink-500 text-white flex items-center justify-center font-bold shadow-sm">
                     🚀
@@ -958,7 +942,7 @@ export default function App() {
                       final api = <span className="text-emerald-300">&apos;Dio + WebSockets&apos;</span>;
                     </p>
                     <p className="pl-2">
-                      final backend = <span className="text-emerald-300">&apos;Spring Boot&apos;</span>;
+                      final backend = <span className="text-emerald-300">&apos;Python + FastAPI&apos;</span>;
                     </p>
                     <p className="pl-2">
                       final pay = <span className="text-emerald-300">&apos;Razorpay SDK&apos;</span>;
@@ -1003,7 +987,7 @@ export default function App() {
                   I’ve spent the past year designing, developing, and delivering production-ready
                   cross-platform mobile applications for <strong>Android and iOS</strong> using{' '}
                   <strong>Flutter and Dart</strong>, complemented by backend engineering in{' '}
-                  <strong>Spring Boot (Java)</strong>. Currently working on the{' '}
+                  <strong>Python and FastAPI</strong>. Currently working on the{' '}
                   <strong>VPower Logistics (September – Present)</strong> Driver &amp; Trucking app,
                   and previously at <strong>Trapigo (Apr 2025 – Mar 2026)</strong> and across
                   freelance projects, I’ve built multi-module architectures using{' '}
@@ -1290,7 +1274,7 @@ export default function App() {
                   END-TO-END PRODUCTION &amp; FREELANCE
                 </div>
                 <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1">
-                  VPower Logistics, Dhaba 29, Uthix, Live Delivery Tracker, and Spring Boot
+                  VPower Logistics, Dhaba 29, Uthix, Live Delivery Tracker, and FastAPI
                   Real-Time Chat.
                 </p>
               </div>
@@ -1430,12 +1414,12 @@ export default function App() {
               <div className="polaroid-card w-full max-w-xs rotate-2">
                 <div className="masking-tape -top-3 left-10 rotate-1"></div>
                 <div className="px-2.5 py-1 rounded bg-pink-200 text-zinc-900 font-handwritten text-base font-bold w-fit mb-2">
-                  spring boot + java
+                  python + fastapi
                 </div>
                 <div className="p-3 rounded bg-zinc-900 text-zinc-100 font-mono text-xs space-y-1.5">
-                  <div className="text-amber-300 font-bold">@RestController</div>
+                  <div className="text-amber-300 font-bold">@app.websocket</div>
                   <div className="text-[11px] text-zinc-300">
-                    Custom Spring Boot backend powering 1-to-1 WebSocket messaging, user
+                    Custom Python &amp; FastAPI backend powering 1-to-1 WebSocket messaging, user
                     relationships &amp; call signaling.
                   </div>
                 </div>
@@ -1582,7 +1566,7 @@ export default function App() {
                 type="text"
                 value={skillQuery}
                 onChange={(e) => setSkillQuery(e.target.value)}
-                placeholder="Search skill (e.g. BLoC, Dio, Spring)..."
+                placeholder="Search skill (e.g. BLoC, Dio, FastAPI)..."
                 className="px-3.5 py-2 rounded-lg text-xs font-mono bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-zinc-600 focus:outline-none"
               />
               <div className="flex flex-wrap gap-1.5">
@@ -1659,7 +1643,7 @@ export default function App() {
                 BLoC &amp; Riverpod
               </span>
               <span className="px-4 py-1.5 rounded-full bg-pink-200 text-zinc-900 font-mono text-xs font-bold">
-                Spring Boot
+                Python &amp; FastAPI
               </span>
               <span className="px-4 py-1.5 rounded-full bg-sky-200 text-zinc-900 font-mono text-xs font-bold">
                 Firebase &amp; FCM
@@ -1700,7 +1684,6 @@ export default function App() {
                   </span>
                   <div className="my-auto space-y-1">
                     <div className="font-bold text-sm truncate">khatrisagar415@gmail.com</div>
-                    <div className="font-mono text-xs text-amber-200">+91 8570885509</div>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -1708,14 +1691,7 @@ export default function App() {
                       onClick={() => copyTextToClipboard('khatrisagar415@gmail.com', 'Contact')}
                       className="px-2.5 py-1 rounded bg-white text-zinc-900 font-mono text-[10px] font-bold"
                     >
-                      Copy
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => copyTextToClipboard('+918570885509', 'Contact')}
-                      className="px-2.5 py-1 rounded bg-zinc-800 text-white font-mono text-[10px] font-bold"
-                    >
-                      Copy Phone
+                      Copy Email
                     </button>
                   </div>
                 </div>
@@ -1803,8 +1779,8 @@ export default function App() {
                     <option value="Freelance Mobile App Project">
                       Freelance Mobile App Project
                     </option>
-                    <option value="Flutter + Spring Boot Full-Stack Contract">
-                      Flutter + Spring Boot Full-Stack Contract
+                    <option value="Flutter + FastAPI Full-Stack Contract">
+                      Flutter + FastAPI Full-Stack Contract
                     </option>
                     <option value="General Networking & Collaboration">
                       General Networking &amp; Collaboration
@@ -2027,7 +2003,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => {
-                    const summaryText = `Sagar Khatri — Mobile Application Developer (Flutter & Spring Boot)\nEmail: khatrisagar415@gmail.com | Phone: +918570885509\nGitHub: https://github.com/Goku9501 | LinkedIn: https://linkedin.com/in/sagar-khatri-1906a72a7\nExperience:\n- Mobile Application Developer at VPower Logistics (September – Present) — Driver & Trucking App (load, driver & journey status tracking)\n- Mobile Engineer at Trapigo (Apr 2025 – Mar 2026) — Dhaba 29 & Uthix.\nEducation: MCA at Chandigarh University (2024–2026), BCA at MDU Rohtak (2020–2023).`;
+                    const summaryText = `Sagar Khatri — Mobile Application Developer (Flutter & FastAPI)\nEmail: khatrisagar415@gmail.com\nGitHub: https://github.com/Goku9501 | LinkedIn: https://linkedin.com/in/sagar-khatri-1906a72a7\nExperience:\n- Mobile Application Developer at VPower Logistics (September – Present) — Driver & Trucking App (load, driver & journey status tracking)\n- Mobile Engineer at Trapigo (Apr 2025 – Mar 2026) — Dhaba 29 & Uthix.\nEducation: MCA at Chandigarh University (2024–2026), BCA at MDU Rohtak (2020–2023).`;
                     copyTextToClipboard(summaryText, 'Resume Summary');
                   }}
                   className="px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-400"
@@ -2060,7 +2036,7 @@ export default function App() {
                   Mobile Application Developer
                 </p>
                 <p className="text-xs text-zinc-500 mt-2 font-mono">
-                  khatrisagar415@gmail.com | +918570885509 | github.com/Goku9501 |
+                  khatrisagar415@gmail.com | github.com/Goku9501 |
                   linkedin.com/in/sagar-khatri-1906a72a7
                 </p>
               </div>
@@ -2072,13 +2048,13 @@ export default function App() {
                 <p className="text-xs sm:text-sm leading-relaxed">
                   Flutter Developer with professional experience designing, developing, and
                   delivering production-ready cross-platform mobile applications for Android and
-                  iOS, complemented by backend development experience with Spring Boot. Experienced
-                  in building scalable applications using Clean Architecture, MVVM, BLoC/Cubit,
-                  Riverpod, and Provider, with a strong focus on clean, maintainable, reusable code
-                  and cross-platform development. Hands-on experience with REST API integration,
-                  Firebase, WebSockets, payment gateway integration, OTP/SMS authentication, push
-                  notifications, real-time communication, location &amp; maps services, live
-                  streaming, and local storage.
+                  iOS, complemented by backend development experience with Python and FastAPI.
+                  Experienced in building scalable applications using Clean Architecture, MVVM,
+                  BLoC/Cubit, Riverpod, and Provider, with a strong focus on clean, maintainable,
+                  reusable code and cross-platform development. Hands-on experience with REST API
+                  integration, Firebase, WebSockets, payment gateway integration, OTP/SMS
+                  authentication, push notifications, real-time communication, location &amp; maps
+                  services, live streaming, and local storage.
                 </p>
               </div>
 
@@ -2152,7 +2128,7 @@ export default function App() {
                     </p>
                     <p className="text-zinc-600 dark:text-zinc-300">
                       Developed one-to-one real-time messaging and audio/video calling backed by a
-                      custom Spring Boot (Java) &amp; WebSocket backend, BLoC/Cubit state
+                      custom FastAPI (Python) &amp; WebSocket backend, BLoC/Cubit state
                       management, username search, friend requests, and Twilio/Fast2SMS OTP login.
                     </p>
                   </div>
