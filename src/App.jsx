@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { initFirebase } from './firebase';
 import { EXPERIENCES_DATA, PROJECTS_DATA, SKILLS_DATA } from './data/portfolioData';
-import { BackgroundSkeletonStickers } from './components/DancingSkeletonStickers';
+import {
+  BackgroundSkeletonStickers,
+  PeekabooSkeletonKid,
+  HangingSkeletonKid,
+  SittingSkeletonKid,
+  JumpingSkeletonKid,
+} from './components/DancingSkeletonStickers';
 
 export default function App() {
   const [isDark, setIsDark] = useState(false);
@@ -960,8 +966,19 @@ export default function App() {
             </div>
           </div>
 
-          <div className="p-6 sm:p-10 rounded-2xl bg-white/85 dark:bg-zinc-900/90 border-2 border-zinc-900 dark:border-zinc-700 shadow-[6px_6px_0px_#18181b] dark:shadow-[6px_6px_0px_#27272a]">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="relative mt-10">
+            {/* Shy Sprout Skeleton Kid hiding behind the ABOUT card and peeking up */}
+            <div className="absolute -top-12 right-6 sm:right-12 z-0">
+              <PeekabooSkeletonKid
+                direction="top"
+                hat="sprout"
+                accent="#10B981"
+                label="peekaboo! 🫣"
+              />
+            </div>
+
+            <div className="relative z-10 p-6 sm:p-10 rounded-2xl bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-zinc-700 shadow-[6px_6px_0px_#18181b] dark:shadow-[6px_6px_0px_#27272a]">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-4 space-y-4">
                 <h2 className="font-pixel-display text-4xl sm:text-5xl text-zinc-900 dark:text-white">
                   ABOUT
@@ -1007,6 +1024,7 @@ export default function App() {
                   Play Store release.
                 </p>
               </div>
+            </div>
             </div>
           </div>
         </section>
@@ -1230,12 +1248,23 @@ export default function App() {
                   </div>
                 </div>
               </div>
+
+              {/* Monkey-bar Skeleton Kid hanging & swinging from the bottom edge of the Uthix card */}
+              <div className="hidden sm:block absolute -bottom-[78px] left-10 z-20">
+                <HangingSkeletonKid accent="#EC4899" label="wheee! 🤸" />
+              </div>
             </div>
           </div>
 
           {/* CASE STUDY OUTCOME STICKY NOTES */}
-          <div className="p-6 sm:p-8 rounded-2xl bg-white/90 dark:bg-zinc-900/90 border-2 border-zinc-900 dark:border-zinc-700 shadow-[5px_5px_0px_#18181b] space-y-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
+          <div className="relative pt-8 sm:pt-12">
+            {/* Trampoline Skeleton Kid with propeller hat bouncing on top of THE RESULTS card */}
+            <div className="hidden sm:block absolute -top-9 right-10 z-20">
+              <JumpingSkeletonKid accent="#10B981" label="boing! boing! 🚀" />
+            </div>
+
+            <div className="p-6 sm:p-8 rounded-2xl bg-white/90 dark:bg-zinc-900/90 border-2 border-zinc-900 dark:border-zinc-700 shadow-[5px_5px_0px_#18181b] space-y-6">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
               <div>
                 <div className="font-mono text-xs text-zinc-500 uppercase">
                   ● ENGINEERING IMPACT &amp; ARCHITECTURE METRICS
@@ -1304,6 +1333,7 @@ export default function App() {
                   CI/CD via GitHub Actions, unit testing, code review, and Play Store release
                   signing.
                 </p>
+              </div>
               </div>
             </div>
           </div>
@@ -1387,25 +1417,38 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="w-full max-w-[340px] rounded-[2.5rem] p-3 bg-zinc-900 border-4 border-zinc-950 shadow-[8px_8px_0px_#2563EB] relative">
-                <div className="flex items-center justify-between px-5 pt-1 pb-2 text-[11px] text-zinc-400 font-mono">
-                  <span>9:41</span>
-                  <div className="w-20 h-4 rounded-full bg-black flex items-center justify-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-zinc-800"></span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+              <div className="relative w-full max-w-[340px]">
+                {/* Cap-wearing curious Skeleton Kid peeking out from behind the left edge of the Phone Simulator */}
+                <div className="hidden sm:block absolute top-24 -left-14 z-0">
+                  <PeekabooSkeletonKid
+                    direction="left"
+                    hat="cap"
+                    accent="#FACC15"
+                    label="psst! nice app 👀"
+                    delay="1.2s"
+                  />
+                </div>
+
+                <div className="w-full rounded-[2.5rem] p-3 bg-zinc-900 border-4 border-zinc-950 shadow-[8px_8px_0px_#2563EB] relative z-10">
+                  <div className="flex items-center justify-between px-5 pt-1 pb-2 text-[11px] text-zinc-400 font-mono">
+                    <span>9:41</span>
+                    <div className="w-20 h-4 rounded-full bg-black flex items-center justify-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-zinc-800"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                    </div>
+                    <span>5G 100%</span>
                   </div>
-                  <span>5G 100%</span>
-                </div>
 
-                <div
-                  id="simulatorViewport"
-                  className="bg-slate-950 text-slate-100 rounded-[1.9rem] h-[435px] overflow-y-auto custom-scrollbar flex flex-col justify-between p-4 border border-slate-800"
-                >
-                  {renderSimulatorViewport()}
-                </div>
+                  <div
+                    id="simulatorViewport"
+                    className="bg-slate-950 text-slate-100 rounded-[1.9rem] h-[435px] overflow-y-auto custom-scrollbar flex flex-col justify-between p-4 border border-slate-800"
+                  >
+                    {renderSimulatorViewport()}
+                  </div>
 
-                <div className="pt-2.5 pb-1 flex justify-center">
-                  <div className="w-28 h-1 rounded-full bg-zinc-700"></div>
+                  <div className="pt-2.5 pb-1 flex justify-center">
+                    <div className="w-28 h-1 rounded-full bg-zinc-700"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1505,8 +1548,12 @@ export default function App() {
                 EDUCATION
               </h2>
 
-              <div className="space-y-4">
-                <div className="p-5 rounded-2xl bg-amber-100/90 dark:bg-zinc-900 border-2 border-zinc-900 dark:border-zinc-700 shadow-[4px_4px_0px_#18181b]">
+              <div className="space-y-4 pt-6 sm:pt-8">
+                <div className="relative p-5 rounded-2xl bg-amber-100 dark:bg-zinc-900 border-2 border-zinc-900 dark:border-zinc-700 shadow-[4px_4px_0px_#18181b]">
+                  {/* Chill headphones Skeleton Kid sitting on the top ledge & swinging its dangling legs */}
+                  <div className="hidden sm:block absolute -top-[62px] right-6 z-20">
+                    <SittingSkeletonKid accent="#3B82F6" label="♪ chill vibes ♫" />
+                  </div>
                   <div className="font-mono text-xs font-bold text-amber-900 dark:text-amber-400">
                     Aug 2024 – May 2026
                   </div>
@@ -1713,10 +1760,22 @@ export default function App() {
                 </h3>
               </div>
 
-              <form
-                onSubmit={handleContactSubmit}
-                className="w-full bg-amber-200/95 dark:bg-amber-300 text-zinc-900 p-6 sm:p-8 rounded-lg border-2 border-zinc-900 sticky-note space-y-4 relative"
-              >
+              <div className="relative w-full mt-6">
+                {/* Bow-wearing shy Skeleton Kid peeking out from behind the yellow CONTACT sticky note */}
+                <div className="absolute -top-12 right-6 sm:right-10 z-0">
+                  <PeekabooSkeletonKid
+                    direction="top"
+                    hat="bow"
+                    accent="#EC4899"
+                    label="send a msg! 💌"
+                    delay="2.1s"
+                  />
+                </div>
+
+                <form
+                  onSubmit={handleContactSubmit}
+                  className="w-full bg-amber-200 dark:bg-amber-300 text-zinc-900 p-6 sm:p-8 rounded-lg border-2 border-zinc-900 sticky-note space-y-4 relative z-10"
+                >
                 <div className="masking-tape -top-3 left-1/2 -translate-x-1/2"></div>
                 <p className="font-mono text-xs font-bold uppercase tracking-wide leading-relaxed text-zinc-800">
                   GOT A FLUTTER ROLE, FREELANCE APP, OR FULL-STACK PROJECT? SEND IT OVER — I READ
@@ -1815,7 +1874,8 @@ export default function App() {
                   </button>
                   <span className="font-handwritten text-lg text-zinc-800">SEND IT →</span>
                 </div>
-              </form>
+                </form>
+              </div>
 
               <div className="mt-6 text-center space-y-2">
                 <p className="font-handwritten text-xl text-zinc-600 dark:text-zinc-300">
