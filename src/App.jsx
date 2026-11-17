@@ -8,11 +8,21 @@ import {
   SittingSkeletonKid,
   JumpingSkeletonKid,
 } from './components/DancingSkeletonStickers';
+import MusicPlayerWidget, { SONGS_PLAYLIST } from './components/MusicPlayerWidget';
+import DarkModeDoodleMatrix from './components/DarkModeDoodleMatrix';
 
 export default function App() {
   const [isDark, setIsDark] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
+
+  // Music Player & Skeleton Dance Style State (auto-plays on website visit!)
+  const [playlistSongs, setPlaylistSongs] = useState(SONGS_PLAYLIST);
+  const [currentSongIndex, setCurrentSongIndex] = useState(0);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(true);
+
+  const activeSong = playlistSongs[currentSongIndex] || playlistSongs[0];
+  const activeDanceStyle = activeSong?.danceStyle || 'lofi';
 
   // Projects Filter & Modal State
   const [projFilter, setProjFilter] = useState('all');
@@ -485,11 +495,39 @@ export default function App() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Ambient Notebook Background Dancing Skeleton Stickers */}
-      <BackgroundSkeletonStickers />
+      {/* Dark Mode Aesthetic Doodle Light Matrix (background z-0, changes color mixture & speed with music!) */}
+      <DarkModeDoodleMatrix
+        isDark={isDark}
+        danceStyle={activeDanceStyle}
+        isPlaying={isMusicPlaying}
+      />
+
+      {/* Ambient Notebook Background Dancing Skeleton Stickers (synced with active song!) */}
+      <BackgroundSkeletonStickers
+        danceStyle={activeDanceStyle}
+        isPlaying={isMusicPlaying}
+        songTitle={activeSong?.title}
+      />
+
+      {/* Bottom-Right Auto-Playing Music Jukebox Widget */}
+      <MusicPlayerWidget
+        songs={playlistSongs}
+        currentSongIndex={currentSongIndex}
+        onSelectSong={(idx) => setCurrentSongIndex(idx)}
+        isPlaying={isMusicPlaying}
+        onTogglePlay={(playState) => setIsMusicPlaying(playState)}
+        onAddCustomSongs={(newTracks) => {
+          setPlaylistSongs((prev) => {
+            const updated = [...prev, ...newTracks];
+            setCurrentSongIndex(prev.length);
+            return updated;
+          });
+          setIsMusicPlaying(true);
+        }}
+      />
 
       {/* Toast Notification */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none no-print">
+      <div className="fixed bottom-24 right-5 z-50 flex flex-col gap-2 pointer-events-none no-print">
         {toasts.map((t) => (
           <div
             key={t.id}
@@ -1251,7 +1289,12 @@ export default function App() {
 
               {/* Monkey-bar Skeleton Kid hanging & swinging from the bottom edge of the Uthix card */}
               <div className="hidden sm:block absolute -bottom-[78px] left-10 z-20">
-                <HangingSkeletonKid accent="#EC4899" label="wheee! 🤸" />
+                <HangingSkeletonKid
+                  accent="#EC4899"
+                  label="wheee! 🤸"
+                  danceStyle={activeDanceStyle}
+                  isPlaying={isMusicPlaying}
+                />
               </div>
             </div>
           </div>
@@ -1260,7 +1303,12 @@ export default function App() {
           <div className="relative pt-8 sm:pt-12">
             {/* Trampoline Skeleton Kid with propeller hat bouncing on top of THE RESULTS card */}
             <div className="hidden sm:block absolute -top-9 right-10 z-20">
-              <JumpingSkeletonKid accent="#10B981" label="boing! boing! 🚀" />
+              <JumpingSkeletonKid
+                accent="#10B981"
+                label="boing! boing! 🚀"
+                danceStyle={activeDanceStyle}
+                isPlaying={isMusicPlaying}
+              />
             </div>
 
             <div className="p-6 sm:p-8 rounded-2xl bg-white/90 dark:bg-zinc-900/90 border-2 border-zinc-900 dark:border-zinc-700 shadow-[5px_5px_0px_#18181b] space-y-6">
@@ -1552,7 +1600,13 @@ export default function App() {
                 <div className="relative p-5 rounded-2xl bg-amber-100 dark:bg-zinc-900 border-2 border-zinc-900 dark:border-zinc-700 shadow-[4px_4px_0px_#18181b]">
                   {/* Chill headphones Skeleton Kid sitting on the top ledge & swinging its dangling legs */}
                   <div className="hidden sm:block absolute -top-[62px] right-6 z-20">
-                    <SittingSkeletonKid accent="#3B82F6" label="♪ chill vibes ♫" />
+                    <SittingSkeletonKid
+                      accent="#3B82F6"
+                      label="♪ chill vibes ♫"
+                      danceStyle={activeDanceStyle}
+                      isPlaying={isMusicPlaying}
+                      songTitle={activeSong?.title}
+                    />
                   </div>
                   <div className="font-mono text-xs font-bold text-amber-900 dark:text-amber-400">
                     Aug 2024 – May 2026

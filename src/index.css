@@ -626,6 +626,82 @@ body {
   animation: skel-balloon-float 2.2s ease-in-out infinite;
 }
 
+/* Song-Specific Vibe Keyframes (Brabus Bass Bounce vs Romantic Slow Sway vs Disco vs Party) */
+@keyframes skel-bass-pump {
+  0%, 100% {
+    transform: translateY(0px) scaleY(0.9) scaleX(1.06) rotate(-3deg);
+  }
+  25% {
+    transform: translateY(-22px) scaleY(1.08) scaleX(0.95) rotate(5deg);
+  }
+  50% {
+    transform: translateY(0px) scaleY(0.88) scaleX(1.08) rotate(3deg);
+  }
+  75% {
+    transform: translateY(-24px) scaleY(1.08) scaleX(0.95) rotate(-5deg);
+  }
+}
+
+@keyframes skel-romantic-sway {
+  0%, 100% {
+    transform: translateX(-10px) translateY(0px) rotate(-9deg);
+  }
+  50% {
+    transform: translateX(10px) translateY(-12px) rotate(9deg);
+  }
+}
+
+@keyframes skel-party-bhangra {
+  0%, 100% {
+    transform: translateY(0px) rotate(-12deg) scale(1);
+  }
+  25% {
+    transform: translateY(-18px) rotate(12deg) scale(1.08);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-10deg) scale(0.98);
+  }
+  75% {
+    transform: translateY(-20px) rotate(14deg) scale(1.1);
+  }
+}
+
+.animate-skel-bass-pump {
+  animation: skel-bass-pump 0.62s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+.animate-skel-romantic-sway {
+  animation: skel-romantic-sway 2.4s ease-in-out infinite;
+}
+
+.animate-skel-party-bhangra {
+  animation: skel-party-bhangra 0.72s ease-in-out infinite;
+}
+
+/* Dark Mode Doodle Light Matrix Stream Animation */
+@keyframes doodle-matrix-fall {
+  0% {
+    transform: translateY(-28vh);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.75;
+  }
+  85% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateY(112vh);
+    opacity: 0;
+  }
+}
+
+.animate-doodle-matrix-fall {
+  animation-name: doodle-matrix-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
 @media print {
   .no-print {
     display: none !important;
