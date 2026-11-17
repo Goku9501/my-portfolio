@@ -74,7 +74,6 @@ export default function MusicPlayerWidget({
   const [isMuted, setIsMuted] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [waitingForFirstInteraction, setWaitingForFirstInteraction] = useState(false);
-  const [autoMutedByBrowser, setAutoMutedByBrowser] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
@@ -82,10 +81,10 @@ export default function MusicPlayerWidget({
   const fileInputRef = useRef(null);
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
-  const autoMutedRef = useRef(autoMutedByBrowser);
-  autoMutedRef.current = autoMutedByBrowser;
+  const isActuallyPlayingRef = useRef(false);
   const prevSrcRef = useRef(null);
   const lastUnlockTimeRef = useRef(0);
+  const lastScrollTryRef = useRef(0);
 
   const currentSong = songs[currentSongIndex] || songs[0];
   const resolvedSrc = resolveMusicSrc(currentSong?.src);
@@ -93,17 +92,15 @@ export default function MusicPlayerWidget({
     currentSong?.danceStyle ||
     DANCE_STYLES_CYCLE[currentSongIndex % DANCE_STYLES_CYCLE.length];
 
-  // Safely start playing the current full MP3:
-  // 1) Try unmuted autoplay first.
-  // 2) If browser blocks unmuted autoplay on launch, immediately start muted autoplay so the song
-  //    auto-plays on launch (0:01, 0:02...), and unmute on the very first key/mouse/touch interaction!
+  // Safely start playing the current full MP3
+  // IMPORTANT: Do NOT put native `autoPlay` on <audio>, because native `autoPlay` sets
+  // `audio.paused = false` before checking permissions and causes JS `if (!audio.paused)` to exit early!
   const safePlay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio || !isPlayingRef.current) return;
 
-    // If already actively playing, do not interrupt!
-    if (!audio.paused) {
-      setIsAudioPlaying(true);
+    // Only skip if we have confirmed real playback is actively running
+    if (isActuallyPlayingRef.current && !audio.paused) {
       return;
     }
 
@@ -114,31 +111,20 @@ export default function MusicPlayerWidget({
     if (playPromise !== undefined) {
       playPromise
         .then(() => {
+          isActuallyPlayingRef.current = true;
           setIsAudioPlaying(true);
-          setAutoMutedByBrowser(false);
           setWaitingForFirstInteraction(false);
         })
         .catch((err) => {
           if (err?.name === 'AbortError') return;
-
-          // Browser blocked unmuted autoplay on initial launch -> start muted autoplay immediately!
-          audio.muted = true;
-          audio
-            .play()
-            .then(() => {
-              setIsAudioPlaying(true);
-              setAutoMutedByBrowser(true);
-              setWaitingForFirstInteraction(true);
-            })
-            .catch(() => {
-              setIsAudioPlaying(false);
-              setWaitingForFirstInteraction(true);
-            });
+          isActuallyPlayingRef.current = false;
+          setIsAudioPlaying(false);
+          setWaitingForFirstInteraction(true);
         });
     }
   }, [isMuted, volume]);
 
-  // 1. On initial mount AND when switching songs, play the track (only call audio.load() on track switch!)
+  // 1. On initial mount AND when switching songs
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -148,6 +134,7 @@ export default function MusicPlayerWidget({
     prevSrcRef.current = resolvedSrc;
 
     if (isTrackChange) {
+      isActuallyPlayingRef.current = false;
       setIsAudioPlaying(false);
       setCurrentTime(0);
       setDuration(0);
@@ -168,6 +155,7 @@ export default function MusicPlayerWidget({
     if (isPlaying) {
       safePlay();
     } else {
+      isActuallyPlayingRef.current = false;
       audio.pause();
       setIsAudioPlaying(false);
     }
@@ -178,38 +166,33 @@ export default function MusicPlayerWidget({
     const audio = audioRef.current;
     if (!audio) return;
     audio.volume = isMuted ? 0 : volume;
-    if (!autoMutedRef.current) {
-      audio.muted = isMuted;
-    }
+    audio.muted = isMuted;
   }, [volume, isMuted]);
 
-  // 4. Unmute & unlock full audio on the very first user gesture if browser required initial mute/unlock
+  // 4. Always-ready autoplay unlock whenever `isPlaying` is true but audio hasn't started yet
   useEffect(() => {
-    if (!isPlaying || (!waitingForFirstInteraction && !autoMutedByBrowser && isAudioPlaying)) {
-      return;
-    }
+    if (!isPlaying || isAudioPlaying) return;
 
-    const unlockAudio = () => {
+    const unlockAudio = (e) => {
       const audio = audioRef.current;
       if (!audio || !isPlayingRef.current) return;
+      if (isActuallyPlayingRef.current && !audio.paused) return;
+
+      // Throttle non-click scroll/wheel tries so they never spam
+      if (e && (e.type === 'wheel' || e.type === 'scroll')) {
+        const now = Date.now();
+        if (now - lastScrollTryRef.current < 350) return;
+        lastScrollTryRef.current = now;
+      }
 
       audio.muted = isMuted;
       audio.volume = isMuted ? 0 : volume;
 
-      if (!audio.paused) {
-        // Already auto-playing in muted mode -> now unmuted with full sound!
-        lastUnlockTimeRef.current = Date.now();
-        setAutoMutedByBrowser(false);
-        setWaitingForFirstInteraction(false);
-        setIsAudioPlaying(true);
-        return;
-      }
-
       const p = audio.play();
       if (p !== undefined) {
         p.then(() => {
+          isActuallyPlayingRef.current = true;
           lastUnlockTimeRef.current = Date.now();
-          setAutoMutedByBrowser(false);
           setIsAudioPlaying(true);
           setWaitingForFirstInteraction(false);
           onTogglePlay(true);
@@ -226,6 +209,8 @@ export default function MusicPlayerWidget({
       'keydown',
       'keyup',
       'click',
+      'wheel',
+      'scroll',
     ];
     events.forEach((evt) =>
       window.addEventListener(evt, unlockAudio, { capture: true, passive: true })
@@ -236,7 +221,7 @@ export default function MusicPlayerWidget({
         window.removeEventListener(evt, unlockAudio, { capture: true })
       );
     };
-  }, [isPlaying, isAudioPlaying, waitingForFirstInteraction, autoMutedByBrowser, volume, isMuted, onTogglePlay]);
+  }, [isPlaying, isAudioPlaying, volume, isMuted, onTogglePlay]);
 
   // Advance to the next song automatically when the full song finishes!
   const handleNext = useCallback(() => {
@@ -297,7 +282,7 @@ export default function MusicPlayerWidget({
   };
 
   const handlePlayPauseClick = () => {
-    // If the pointerdown/mousedown of this exact click just unlocked/unmuted autoplay, keep it playing!
+    // If the pointerdown/mousedown of this exact click just unlocked autoplay, keep it playing!
     if (Date.now() - lastUnlockTimeRef.current < 450) {
       onTogglePlay(true);
       return;
@@ -305,22 +290,8 @@ export default function MusicPlayerWidget({
 
     const audio = audioRef.current;
 
-    // If auto-playing in browser-muted mode, clicking the button unmutes with full sound instead of pausing!
-    if (autoMutedByBrowser && audio) {
-      audio.muted = isMuted;
-      audio.volume = isMuted ? 0 : volume;
-      setAutoMutedByBrowser(false);
-      setWaitingForFirstInteraction(false);
-      onTogglePlay(true);
-      if (audio.paused) {
-        audio.play().catch(() => {});
-      }
-      return;
-    }
-
     if (!isPlaying || !isAudioPlaying || (audio && audio.paused)) {
       setWaitingForFirstInteraction(false);
-      setAutoMutedByBrowser(false);
       onTogglePlay(true);
       if (audio) {
         audio.muted = isMuted;
@@ -328,6 +299,7 @@ export default function MusicPlayerWidget({
         audio
           .play()
           .then(() => {
+            isActuallyPlayingRef.current = true;
             setIsAudioPlaying(true);
             setWaitingForFirstInteraction(false);
           })
@@ -345,7 +317,6 @@ export default function MusicPlayerWidget({
         ref={audioRef}
         src={resolvedSrc}
         preload="auto"
-        autoPlay
         onLoadedMetadata={(e) => {
           setDuration(e.currentTarget.duration || 0);
           safePlay();
@@ -353,20 +324,37 @@ export default function MusicPlayerWidget({
         onLoadedData={safePlay}
         onCanPlay={safePlay}
         onPlaying={() => {
+          isActuallyPlayingRef.current = true;
           setIsAudioPlaying(true);
+          setWaitingForFirstInteraction(false);
         }}
         onPause={() => {
+          isActuallyPlayingRef.current = false;
           setIsAudioPlaying(false);
         }}
         onTimeUpdate={(e) => {
           const t = e.currentTarget.currentTime || 0;
           setCurrentTime(t);
           if (!e.currentTarget.paused && t > 0) {
+            isActuallyPlayingRef.current = true;
             setIsAudioPlaying(true);
+            setWaitingForFirstInteraction(false);
           }
         }}
         onEnded={handleNext}
       />
+
+      {/* Sketchbook Autoplay Prompt Pill if Browser Blocked Unmuted Launch */}
+      {isPlaying && !isAudioPlaying && waitingForFirstInteraction && !playlistOpen && (
+        <button
+          type="button"
+          onClick={handlePlayPauseClick}
+          className="mb-2.5 px-3 py-1.5 rounded-xl bg-yellow-300 text-zinc-900 border-2 border-zinc-900 shadow-[3px_3px_0px_#18181b] font-mono text-[11px] font-extrabold flex items-center gap-1.5 animate-bounce cursor-pointer"
+        >
+          <span>🔊</span>
+          <span>Tap anywhere to play {currentSong?.title} ♪</span>
+        </button>
+      )}
 
       {/* Hidden File Input so user can also pick MP3s directly from the browser */}
       <input
@@ -512,9 +500,9 @@ export default function MusicPlayerWidget({
                   ? 'AUTOPLAY ♪'
                   : 'PAUSED'}
               </span>
-              {isPlaying && (autoMutedByBrowser || (!isAudioPlaying && waitingForFirstInteraction)) && (
+              {isPlaying && !isAudioPlaying && waitingForFirstInteraction && (
                 <span className="font-mono text-[9px] text-pink-600 dark:text-pink-400 font-bold animate-pulse">
-                  {autoMutedByBrowser ? '🔊 tap for sound!' : 'tap anywhere!'}
+                  tap anywhere!
                 </span>
               )}
             </div>
