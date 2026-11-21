@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import BalloonPopWrapper from './BalloonPopSkeleton';
 
 /**
  * 1. PEEK-A-BOO SKELETON KID (Hides behind a card & peeks out from top/left/right)
@@ -365,11 +366,13 @@ export function HangingSkeletonKid({
     : label;
 
   return (
-    <div
-      className="pointer-events-none select-none flex flex-col items-center animate-skel-hang"
-      style={{ background: 'transparent' }}
-      aria-hidden="true"
-    >
+    <BalloonPopWrapper accent={accent}>
+      {({ inflatePhrase }) => (
+        <div
+          className="select-none flex flex-col items-center animate-skel-hang"
+          style={{ background: 'transparent' }}
+          aria-hidden="true"
+        >
       <svg
         width="82"
         height="94"
@@ -573,12 +576,14 @@ export function HangingSkeletonKid({
         </g>
       </svg>
 
-      {routineText && (
+      {(inflatePhrase || routineText) && (
         <span className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-pink-300 -mt-2 whitespace-nowrap">
-          {routineText}
+          {inflatePhrase || routineText}
         </span>
       )}
-    </div>
+        </div>
+      )}
+    </BalloonPopWrapper>
   );
 }
 
@@ -612,14 +617,19 @@ export function SittingSkeletonKid({
   }, [danceStyle, songTitle]);
 
   return (
-    <div
-      className="pointer-events-none select-none flex flex-col items-center"
-      style={{ background: 'transparent' }}
-      aria-hidden="true"
-    >
-      <span className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-sky-300 -mb-1 whitespace-nowrap">
-        {isPlaying ? playlist[trackIdx % playlist.length] : '⏸ press play on boombox!'}
-      </span>
+    <BalloonPopWrapper accent={accent}>
+      {({ inflatePhrase }) => (
+        <div
+          className="select-none flex flex-col items-center"
+          style={{ background: 'transparent' }}
+          aria-hidden="true"
+        >
+          <span className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-sky-300 -mb-1 whitespace-nowrap">
+            {inflatePhrase ||
+              (isPlaying
+                ? playlist[trackIdx % playlist.length]
+                : '⏸ press play on boombox!')}
+          </span>
 
       <svg
         width="92"
@@ -912,7 +922,9 @@ export function SittingSkeletonKid({
           />
         </g>
       </svg>
-    </div>
+        </div>
+      )}
+    </BalloonPopWrapper>
   );
 }
 
@@ -949,17 +961,20 @@ export function JumpingSkeletonKid({
     : 'animate-skel-party-bhangra';
 
   return (
-    <div
-      className={`pointer-events-none select-none flex flex-col items-center ${jumpAnimClass}`}
-      style={{
-        background: 'transparent',
-        animationDuration: danceStyle === 'hyper' ? '0.68s' : undefined,
-      }}
-      aria-hidden="true"
-    >
-      <span className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-emerald-300 -mb-1 whitespace-nowrap">
-        {isPlaying ? phrases[idx % phrases.length] : 'waiting for beat.. 🎵'}
-      </span>
+    <BalloonPopWrapper accent={accent}>
+      {({ inflatePhrase }) => (
+        <div
+          className={`select-none flex flex-col items-center ${jumpAnimClass}`}
+          style={{
+            background: 'transparent',
+            animationDuration: danceStyle === 'hyper' ? '0.68s' : undefined,
+          }}
+          aria-hidden="true"
+        >
+          <span className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-emerald-300 -mb-1 whitespace-nowrap">
+            {inflatePhrase ||
+              (isPlaying ? phrases[idx % phrases.length] : 'waiting for beat.. 🎵')}
+          </span>
       <svg
         width="72"
         height="78"
@@ -1119,7 +1134,9 @@ export function JumpingSkeletonKid({
           />
         </g>
       </svg>
-    </div>
+        </div>
+      )}
+    </BalloonPopWrapper>
   );
 }
 
@@ -1953,6 +1970,12 @@ export function BackgroundSkeletonStickers({
   songTitle = '',
 }) {
   const mouseRef = useRef({ x: 50, y: 50 });
+  const skaterPosRef = useRef(null);
+  const detectivePosRef = useRef(null);
+  const bboyPosRef = useRef(null);
+  const busyRef = useRef({ skater: false, detective: false, bboy: false });
+  const inflatingMapRef = useRef({ skater: false, detective: false, bboy: false });
+  const poppedMapRef = useRef({ skater: false, detective: false, bboy: false });
 
   // 1. Ollie the Skateboarder State
   const [skater, setSkater] = useState({
@@ -1987,6 +2010,33 @@ export function BackgroundSkeletonStickers({
     duration: 3.0,
   });
 
+  // Lock a roaming skeleton at its live viewport spot as soon as the cursor begins inflating it
+  const freezeSkeletonAtCurrentPos = (ref, setter) => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect || !window.innerWidth || !window.innerHeight) return;
+    const vw = ((rect.left + rect.width / 2) / window.innerWidth) * 100;
+    const vh = ((rect.top + rect.height / 2) / window.innerHeight) * 100;
+    setter((prev) => ({
+      ...prev,
+      x: vw,
+      y: vh,
+      duration: 0.08,
+    }));
+  };
+
+  const handleInflatingChange = (key, ref, setter, inflating) => {
+    inflatingMapRef.current[key] = inflating;
+    busyRef.current[key] = inflating || poppedMapRef.current[key];
+    if (inflating) {
+      freezeSkeletonAtCurrentPos(ref, setter);
+    }
+  };
+
+  const handlePoppedChange = (key, popped) => {
+    poppedMapRef.current[key] = popped;
+    busyRef.current[key] = inflatingMapRef.current[key] || popped;
+  };
+
   // Immediately transform all 3 skeletons' moves & phrases whenever the song changes!
   useEffect(() => {
     if (!isPlaying) {
@@ -2002,21 +2052,21 @@ export function BackgroundSkeletonStickers({
         trick: true,
         hiding: false,
         phrase: 'BRABUS KICKFLIP!! 🔥🛹',
-        duration: 2.0,
+        duration: busyRef.current.skater ? p.duration : 2.0,
       }));
       setDetective((p) => ({
         ...p,
         inspecting: false,
         hiding: false,
         phrase: 'BRABUS BASS DROP!! 🔊🔥',
-        duration: 2.2,
+        duration: busyRef.current.detective ? p.duration : 2.2,
       }));
       setBboy((p) => ({
         ...p,
         move: 'headspin',
         hiding: false,
         phrase: 'BRABUS HEADSPIN!! 🌪️🔥',
-        duration: 2.2,
+        duration: busyRef.current.bboy ? p.duration : 2.2,
       }));
     } else if (danceStyle === 'disco') {
       setSkater((p) => ({ ...p, trick: true, hiding: false, phrase: '360 DISCO SPIN!! 🕺🛹' }));
@@ -2033,21 +2083,21 @@ export function BackgroundSkeletonStickers({
         trick: false,
         hiding: false,
         phrase: 'thinking of you~ 💖🛹',
-        duration: 4.8,
+        duration: busyRef.current.skater ? p.duration : 4.8,
       }));
       setDetective((p) => ({
         ...p,
         inspecting: true,
         hiding: false,
         phrase: 'AP Dhillon vibes 💖🌹',
-        duration: 5.0,
+        duration: busyRef.current.detective ? p.duration : 5.0,
       }));
       setBboy((p) => ({
         ...p,
         move: 'balloon',
         hiding: false,
         phrase: 'floating in love~ 🎈💖',
-        duration: 5.2,
+        duration: busyRef.current.bboy ? p.duration : 5.2,
       }));
     }
   }, [danceStyle, isPlaying, songTitle]);
@@ -2060,33 +2110,26 @@ export function BackgroundSkeletonStickers({
       const vw = (e.clientX / window.innerWidth) * 100;
       const vh = (e.clientY / window.innerHeight) * 100;
       mouseRef.current = { x: vw, y: vh };
-
-      setDetective((prev) => {
-        const dist = Math.hypot(vw - prev.x, vh - prev.y);
-        if (dist < 13 && !prev.hiding) {
-          return {
-            ...prev,
-            x: 50,
-            y: Math.min(85, Math.max(15, prev.y)),
-            hiding: true,
-            inspecting: false,
-            phrase: '!! spotted! hiding! 🫣',
-            duration: 1.4,
-          };
-        }
-        return prev;
-      });
     };
 
     const handleScroll = () => {
-      setSkater((prev) => ({
-        ...prev,
-        trick: true,
-        phrase: 'woah fast scroll!! 🛹💨',
-      }));
+      if (busyRef.current.skater) return;
+      setSkater((prev) =>
+        busyRef.current.skater
+          ? prev
+          : {
+              ...prev,
+              trick: true,
+              phrase: 'woah fast scroll!! 🛹💨',
+            }
+      );
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
-        setSkater((prev) => ({ ...prev, trick: danceStyle === 'hyper' }));
+        setSkater((prev) =>
+          busyRef.current.skater
+            ? prev
+            : { ...prev, trick: danceStyle === 'hyper' }
+        );
       }, 1200);
     };
 
@@ -2114,6 +2157,7 @@ export function BackgroundSkeletonStickers({
     const id = setInterval(
       () => {
         setSkater((prev) => {
+          if (busyRef.current.skater) return prev;
           const goRight = prev.x < 50;
           const passBehindCard = Math.random() < 0.25;
           const nextX = passBehindCard
@@ -2155,6 +2199,7 @@ export function BackgroundSkeletonStickers({
     const id = setInterval(
       () => {
         setDetective((prev) => {
+          if (busyRef.current.detective) return prev;
           const userY = mouseRef.current.y;
           const targetY = Math.min(86, Math.max(14, userY + randomInRange(-16, 16)));
           const leftMargin = mouseRef.current.x < 50;
@@ -2203,6 +2248,7 @@ export function BackgroundSkeletonStickers({
     const id = setInterval(
       () => {
         setBboy((prev) => {
+          if (busyRef.current.bboy) return prev;
           const nextY =
             active.move === 'balloon' ? randomInRange(16, 42) : randomInRange(52, 86);
           const nextX =
@@ -2231,6 +2277,7 @@ export function BackgroundSkeletonStickers({
     >
       {/* 1. OLLIE THE SKATEBOARDER KID */}
       <div
+        ref={skaterPosRef}
         style={{
           position: 'absolute',
           left: `${skater.x}vw`,
@@ -2241,27 +2288,41 @@ export function BackgroundSkeletonStickers({
         }}
         className="flex flex-col items-center"
       >
-        <span
-          className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-yellow-300 -mb-1 whitespace-nowrap select-none"
-          style={{
-            opacity: skater.hiding ? 0 : 0.95,
-            textShadow: '1.5px 1.5px 0px #FAF8F4, -1.5px -1.5px 0px #FAF8F4',
-          }}
+        <BalloonPopWrapper
+          accent="#FACC15"
+          disabled={skater.hiding}
+          onInflatingChange={(inf) =>
+            handleInflatingChange('skater', skaterPosRef, setSkater, inf)
+          }
+          onPoppedChange={(pop) => handlePoppedChange('skater', pop)}
         >
-          {skater.phrase}
-        </span>
-        <div
-          style={{
-            transform: `scaleX(${skater.facing})`,
-            transition: 'transform 0.25s ease',
-          }}
-        >
-          <SkaterSkeletonSVG trick={skater.trick} danceStyle={danceStyle} />
-        </div>
+          {({ inflatePhrase }) => (
+            <div className="flex flex-col items-center">
+              <span
+                className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-yellow-300 -mb-1 whitespace-nowrap select-none"
+                style={{
+                  opacity: skater.hiding ? 0 : 0.95,
+                  textShadow: '1.5px 1.5px 0px #FAF8F4, -1.5px -1.5px 0px #FAF8F4',
+                }}
+              >
+                {inflatePhrase || skater.phrase}
+              </span>
+              <div
+                style={{
+                  transform: `scaleX(${skater.facing})`,
+                  transition: 'transform 0.25s ease',
+                }}
+              >
+                <SkaterSkeletonSVG trick={skater.trick} danceStyle={danceStyle} />
+              </div>
+            </div>
+          )}
+        </BalloonPopWrapper>
       </div>
 
       {/* 2. SHERLOCK BONES (BASS BOUNCER / ROMANTIC ROSE DAYDREAMER) */}
       <div
+        ref={detectivePosRef}
         style={{
           position: 'absolute',
           left: `${detective.x}vw`,
@@ -2272,27 +2333,41 @@ export function BackgroundSkeletonStickers({
         }}
         className="flex flex-col items-center"
       >
-        <span
-          className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-sky-300 -mb-1 whitespace-nowrap select-none"
-          style={{
-            opacity: detective.hiding ? 0 : 0.95,
-            textShadow: '1.5px 1.5px 0px #FAF8F4, -1.5px -1.5px 0px #FAF8F4',
-          }}
+        <BalloonPopWrapper
+          accent="#38BDF8"
+          disabled={detective.hiding}
+          onInflatingChange={(inf) =>
+            handleInflatingChange('detective', detectivePosRef, setDetective, inf)
+          }
+          onPoppedChange={(pop) => handlePoppedChange('detective', pop)}
         >
-          {detective.phrase}
-        </span>
-        <div
-          style={{
-            transform: `scaleX(${detective.facing})`,
-            transition: 'transform 0.25s ease',
-          }}
-        >
-          <DetectiveSkeletonSVG inspecting={detective.inspecting} danceStyle={danceStyle} />
-        </div>
+          {({ inflatePhrase }) => (
+            <div className="flex flex-col items-center">
+              <span
+                className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-sky-300 -mb-1 whitespace-nowrap select-none"
+                style={{
+                  opacity: detective.hiding ? 0 : 0.95,
+                  textShadow: '1.5px 1.5px 0px #FAF8F4, -1.5px -1.5px 0px #FAF8F4',
+                }}
+              >
+                {inflatePhrase || detective.phrase}
+              </span>
+              <div
+                style={{
+                  transform: `scaleX(${detective.facing})`,
+                  transition: 'transform 0.25s ease',
+                }}
+              >
+                <DetectiveSkeletonSVG inspecting={detective.inspecting} danceStyle={danceStyle} />
+              </div>
+            </div>
+          )}
+        </BalloonPopWrapper>
       </div>
 
       {/* 3. B-BOY RIBS (UPSIDE-DOWN HEADSPINNER / HEART BALLOON FLOATER) */}
       <div
+        ref={bboyPosRef}
         style={{
           position: 'absolute',
           left: `${bboy.x}vw`,
@@ -2303,22 +2378,35 @@ export function BackgroundSkeletonStickers({
         }}
         className="flex flex-col items-center"
       >
-        <span
-          className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-emerald-300 -mb-1 whitespace-nowrap select-none"
-          style={{
-            textShadow: '1.5px 1.5px 0px #FAF8F4, -1.5px -1.5px 0px #FAF8F4',
-          }}
+        <BalloonPopWrapper
+          accent="#10B981"
+          disabled={bboy.hiding}
+          onInflatingChange={(inf) =>
+            handleInflatingChange('bboy', bboyPosRef, setBboy, inf)
+          }
+          onPoppedChange={(pop) => handlePoppedChange('bboy', pop)}
         >
-          {bboy.phrase}
-        </span>
-        <div
-          style={{
-            transform: `scaleX(${bboy.facing})`,
-            transition: 'transform 0.25s ease',
-          }}
-        >
-          <BboySkeletonSVG move={bboy.move} danceStyle={danceStyle} />
-        </div>
+          {({ inflatePhrase }) => (
+            <div className="flex flex-col items-center">
+              <span
+                className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-emerald-300 -mb-1 whitespace-nowrap select-none"
+                style={{
+                  textShadow: '1.5px 1.5px 0px #FAF8F4, -1.5px -1.5px 0px #FAF8F4',
+                }}
+              >
+                {inflatePhrase || bboy.phrase}
+              </span>
+              <div
+                style={{
+                  transform: `scaleX(${bboy.facing})`,
+                  transition: 'transform 0.25s ease',
+                }}
+              >
+                <BboySkeletonSVG move={bboy.move} danceStyle={danceStyle} />
+              </div>
+            </div>
+          )}
+        </BalloonPopWrapper>
       </div>
     </div>
   );
