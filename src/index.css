@@ -759,8 +759,201 @@ body {
   animation: bone-pop-label 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+@keyframes skel-nap-breathe {
+  0%, 100% {
+    transform: translateY(0px) rotate(-3deg) scale(0.98);
+  }
+  50% {
+    transform: translateY(3px) rotate(-6deg) scale(1.02, 0.96);
+  }
+}
+
 .animate-skel-respawn {
   animation: skel-respawn-pop 0.48s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-skel-nap {
+  animation: skel-nap-breathe 2.6s ease-in-out infinite;
+}
+
+/* Diverse Dance Choreographies & Mind-State Postures */
+@keyframes skel-wheelie {
+  0%, 100% {
+    transform: rotate(-15deg) translateY(-2px);
+  }
+  50% {
+    transform: rotate(-23deg) translateY(-8px);
+  }
+}
+
+@keyframes skel-moonwalk {
+  0%, 100% {
+    transform: translateX(-9px) translateY(0px) rotate(-4deg);
+  }
+  50% {
+    transform: translateX(9px) translateY(-3px) rotate(3deg);
+  }
+}
+
+@keyframes skel-robot {
+  0%, 100% {
+    transform: rotate(-9deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(0deg) translateY(-5px);
+  }
+  50% {
+    transform: rotate(9deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(0deg) scaleY(0.92) translateY(2px);
+  }
+}
+
+@keyframes skel-shuffle {
+  0%, 100% {
+    transform: translateX(-7px) translateY(0px) rotate(-6deg);
+  }
+  25% {
+    transform: translateX(0px) translateY(-8px) rotate(0deg);
+  }
+  50% {
+    transform: translateX(7px) translateY(0px) rotate(6deg);
+  }
+  75% {
+    transform: translateX(0px) translateY(-8px) rotate(0deg);
+  }
+}
+
+@keyframes skel-dab {
+  0%, 100% {
+    transform: rotate(-6deg) translateY(0px) scale(1);
+  }
+  50% {
+    transform: rotate(-11deg) translateY(-7px) scale(1.05);
+  }
+}
+
+@keyframes skel-windmill {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) translateY(-8px) scale(1.04);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes skel-wave-groove {
+  0%, 100% {
+    transform: skewX(-8deg) translateY(-4px);
+  }
+  50% {
+    transform: skewX(8deg) translateY(-4px);
+  }
+}
+
+@keyframes skel-sprint {
+  0%, 100% {
+    transform: rotate(15deg) translateY(0px);
+  }
+  50% {
+    transform: rotate(19deg) translateY(-7px);
+  }
+}
+
+@keyframes skel-panic-shiver {
+  0%, 100% {
+    transform: translateX(-4px) translateY(0px);
+  }
+  25% {
+    transform: translateX(4px) translateY(-4px);
+  }
+  50% {
+    transform: translateX(-4px) translateY(0px);
+  }
+  75% {
+    transform: translateX(4px) translateY(-3px);
+  }
+}
+
+@keyframes skel-chat-nod {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(2deg);
+  }
+}
+
+@keyframes skel-helicopter {
+  0%, 100% {
+    transform: translateY(-28px) translateX(-8px) rotate(-5deg);
+  }
+  50% {
+    transform: translateY(-34px) translateX(8px) rotate(5deg);
+  }
+}
+
+@keyframes skel-upside-hang {
+  0%, 100% {
+    transform: rotate(168deg);
+  }
+  50% {
+    transform: rotate(192deg);
+  }
+}
+
+.animate-skel-wheelie {
+  animation: skel-wheelie 0.95s ease-in-out infinite;
+}
+
+.animate-skel-moonwalk {
+  animation: skel-moonwalk 0.9s ease-in-out infinite;
+}
+
+.animate-skel-robot {
+  animation: skel-robot 1.15s steps(1, end) infinite;
+}
+
+.animate-skel-shuffle {
+  animation: skel-shuffle 0.42s ease-in-out infinite;
+}
+
+.animate-skel-dab {
+  animation: skel-dab 0.72s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+.animate-skel-windmill {
+  transform-origin: 55px 60px;
+  animation: skel-windmill 0.78s linear infinite;
+}
+
+.animate-skel-wave-groove {
+  animation: skel-wave-groove 1.05s ease-in-out infinite;
+}
+
+.animate-skel-sprint {
+  animation: skel-sprint 0.28s ease-in-out infinite;
+}
+
+.animate-skel-panic-shiver {
+  animation: skel-panic-shiver 0.18s linear infinite;
+}
+
+.animate-skel-chat-nod {
+  animation: skel-chat-nod 1.05s ease-in-out infinite;
+}
+
+.animate-skel-helicopter {
+  animation: skel-helicopter 1.5s ease-in-out infinite;
+}
+
+.animate-skel-upside-hang {
+  transform-origin: 50px 8px;
+  animation: skel-upside-hang 2.1s ease-in-out infinite;
 }
 
 @media print {

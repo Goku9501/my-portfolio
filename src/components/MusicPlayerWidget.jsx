@@ -196,7 +196,7 @@ export default function MusicPlayerWidget({
           setIsAudioPlaying(true);
           setWaitingForFirstInteraction(false);
           onTogglePlay(true);
-        }).catch(() => {});
+        }).catch(() => { });
       }
     };
 
@@ -303,7 +303,7 @@ export default function MusicPlayerWidget({
             setIsAudioPlaying(true);
             setWaitingForFirstInteraction(false);
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     } else {
       onTogglePlay(false);
@@ -497,8 +497,8 @@ export default function MusicPlayerWidget({
                 {isPlaying && isAudioPlaying
                   ? 'PLAYING ♪'
                   : isPlaying && waitingForFirstInteraction
-                  ? 'AUTOPLAY ♪'
-                  : 'PAUSED'}
+                    ? 'AUTOPLAY ♪'
+                    : 'PAUSED'}
               </span>
               {isPlaying && !isAudioPlaying && waitingForFirstInteraction && (
                 <span className="font-mono text-[9px] text-pink-600 dark:text-pink-400 font-bold animate-pulse">

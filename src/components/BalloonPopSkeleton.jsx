@@ -635,6 +635,7 @@ function getInflatePhrase({ isInflating, pressure, justRespawned }) {
  */
 export default function BalloonPopWrapper({
   children,
+  skeletonId = 'skeleton',
   accent = '#FACC15',
   disabled = false,
   inflateDurationMs = 1250,
@@ -730,12 +731,20 @@ export default function BalloonPopWrapper({
     onPoppedChangeRef.current?.(true);
     playBoneScatterSound();
 
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('skeleton-popped', {
+          detail: { id: skeletonId, x: liveOrigin.x, y: liveOrigin.y },
+        })
+      );
+    }
+
     // Safety fallback if tab was backgrounded and rAF paused during reassembly
     clearTimers();
     fallbackTimerRef.current = setTimeout(() => {
       completeReassembly();
     }, respawnDelayRef.current + 400);
-  }, [clearTimers, completeReassembly, getLiveOrigin]);
+  }, [clearTimers, completeReassembly, getLiveOrigin, skeletonId]);
 
   // Clear hover immediately if disabled dynamically (e.g. skeleton hiding behind card)
   useEffect(() => {

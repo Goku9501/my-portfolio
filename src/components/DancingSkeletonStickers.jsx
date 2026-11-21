@@ -1,5 +1,48 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import BalloonPopWrapper from './BalloonPopSkeleton';
+import {
+  createInitialCrewState,
+  stepCrewPhysics,
+  detectVisibleSection,
+  notifyBuddyPopped,
+  notifyBuddyReassembled,
+  notifyUserClick,
+  notifyFastScroll,
+  syncCrewMusicVibe,
+} from './skeletonBrain';
+
+function randomInRange(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+/**
+ * Shared witness hook so foreground card skeletons also react when any other skeleton pops.
+ */
+function useWitnessPopReaction(selfId, reactions) {
+  const [witnessPhrase, setWitnessPhrase] = useState(null);
+  const reactionsRef = useRef(reactions);
+  reactionsRef.current = reactions;
+
+  useEffect(() => {
+    let timerId = null;
+    const handlePop = (e) => {
+      if (e.detail?.id === selfId) return;
+      const list = reactionsRef.current;
+      if (!list || !list.length) return;
+      setWitnessPhrase(list[Math.floor(Math.random() * list.length)]);
+      clearTimeout(timerId);
+      timerId = setTimeout(() => setWitnessPhrase(null), 2600);
+    };
+
+    window.addEventListener('skeleton-popped', handlePop);
+    return () => {
+      window.removeEventListener('skeleton-popped', handlePop);
+      clearTimeout(timerId);
+    };
+  }, [selfId]);
+
+  return witnessPhrase;
+}
 
 /**
  * 1. PEEK-A-BOO SKELETON KID (Hides behind a card & peeks out from top/left/right)
@@ -317,9 +360,14 @@ export function HangingSkeletonKid({
   danceStyle = 'lofi',
   isPlaying = true,
 }) {
-  const [routine, setRoutine] = useState('swing'); // 'swing' | 'one-hand' | 'chin-up'
+  const [routine, setRoutine] = useState('swing'); // 'swing' | 'one-hand' | 'chin-up' | 'upside-down'
+  const witnessPhrase = useWitnessPopReaction('hanging', [
+    'yikes!! glad im hanging up here 😅',
+    'WHOA someone just exploded?! 😱',
+    'dont pop my hands off!! 😰🦴',
+  ]);
 
-  // Immediately switch gymnastic move when the song / danceStyle changes!
+  // Organic randomized gymnastic routine changes synced with song vibe
   useEffect(() => {
     if (!isPlaying) {
       setRoutine('swing');
@@ -327,34 +375,40 @@ export function HangingSkeletonKid({
     }
     if (danceStyle === 'hyper') {
       setRoutine('chin-up');
-    } else if (danceStyle === 'disco') {
-      setRoutine('one-hand');
-    } else if (danceStyle === 'party') {
+    } else if (danceStyle === 'disco' || danceStyle === 'party') {
       setRoutine('one-hand');
     } else {
       setRoutine('swing');
     }
 
     const movesByStyle = {
-      lofi: ['swing', 'one-hand', 'swing'],
-      hyper: ['chin-up', 'one-hand', 'chin-up'],
-      disco: ['one-hand', 'swing', 'one-hand'],
-      party: ['chin-up', 'one-hand', 'swing'],
+      lofi: ['swing', 'one-hand', 'upside-down', 'swing'],
+      hyper: ['chin-up', 'upside-down', 'one-hand', 'chin-up'],
+      disco: ['one-hand', 'upside-down', 'swing'],
+      party: ['chin-up', 'upside-down', 'one-hand', 'swing'],
     };
     const moves = movesByStyle[danceStyle] || movesByStyle.lofi;
     let idx = 0;
-    const id = setInterval(
-      () => {
+    let timeoutId = null;
+
+    const scheduleNext = () => {
+      const delay =
+        danceStyle === 'hyper' ? randomInRange(1900, 3200) : randomInRange(2800, 5200);
+      timeoutId = setTimeout(() => {
         idx = (idx + 1) % moves.length;
         setRoutine(moves[idx]);
-      },
-      danceStyle === 'hyper' ? 2000 : 3400
-    );
-    return () => clearInterval(id);
+        scheduleNext();
+      }, delay);
+    };
+
+    scheduleNext();
+    return () => clearTimeout(timeoutId);
   }, [danceStyle, isPlaying]);
 
   const routineText = !isPlaying
     ? 'music paused.. 🎵'
+    : routine === 'upside-down'
+    ? 'upside-down hang!! 🙃'
     : routine === 'one-hand'
     ? danceStyle === 'disco'
       ? 'disco 1-hand wave!! 🕺👋'
@@ -366,10 +420,12 @@ export function HangingSkeletonKid({
     : label;
 
   return (
-    <BalloonPopWrapper accent={accent}>
+    <BalloonPopWrapper skeletonId="hanging" accent={accent}>
       {({ inflatePhrase }) => (
         <div
-          className="select-none flex flex-col items-center animate-skel-hang"
+          className={`select-none flex flex-col items-center ${
+            routine === 'upside-down' ? '' : 'animate-skel-hang'
+          }`}
           style={{ background: 'transparent' }}
           aria-hidden="true"
         >
@@ -379,7 +435,9 @@ export function HangingSkeletonKid({
         viewBox="0 0 96 108"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="die-cut-skeleton overflow-visible"
+        className={`die-cut-skeleton overflow-visible ${
+          routine === 'upside-down' ? 'animate-skel-upside-hang' : ''
+        }`}
       >
         {/* Left Hand always clamped onto the card bottom border */}
         <circle cx="35" cy="7" r="4.8" fill={accent} stroke="#18181b" strokeWidth="2.2" />
@@ -576,9 +634,9 @@ export function HangingSkeletonKid({
         </g>
       </svg>
 
-      {(inflatePhrase || routineText) && (
+      {(inflatePhrase || witnessPhrase || routineText) && (
         <span className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-pink-300 -mt-2 whitespace-nowrap">
-          {inflatePhrase || routineText}
+          {inflatePhrase || witnessPhrase || routineText}
         </span>
       )}
         </div>
@@ -607,17 +665,48 @@ export function SittingSkeletonKid({
   };
   const playlist = styleVibes[danceStyle] || styleVibes.lofi;
   const [trackIdx, setTrackIdx] = useState(0);
+  const [pose, setPose] = useState('bop'); // 'bop' | 'sip' | 'scratch' | 'nod'
+  const witnessPhrase = useWitnessPopReaction('sitting', [
+    'WHOA someone just exploded?! 😱🎧',
+    'yikes!! good thing im chilling up here 😅',
+    'uh oh bones flying everywhere!! 🦴👀',
+  ]);
 
   useEffect(() => {
     setTrackIdx(0);
-    const id = setInterval(() => {
-      setTrackIdx((prev) => (prev + 1) % playlist.length);
-    }, 3200);
-    return () => clearInterval(id);
-  }, [danceStyle, songTitle]);
+    setPose('bop');
+    const poses = isPlaying ? ['bop', 'sip', 'scratch', 'nod'] : ['nod', 'sip'];
+    let timeoutId = null;
+
+    const scheduleNext = () => {
+      timeoutId = setTimeout(() => {
+        setTrackIdx((prev) => (prev + 1) % playlist.length);
+        setPose((prev) => {
+          const candidates = poses.filter((p) => p !== prev);
+          return candidates[Math.floor(Math.random() * candidates.length)] || 'bop';
+        });
+        scheduleNext();
+      }, randomInRange(2800, 5200));
+    };
+
+    scheduleNext();
+    return () => clearTimeout(timeoutId);
+  }, [danceStyle, songTitle, isPlaying]);
+
+  const poseCaption = !isPlaying
+    ? pose === 'sip'
+      ? 'sipping boba while paused~ 🧋'
+      : '⏸ press play on boombox!'
+    : pose === 'sip'
+    ? 'sipping boba~ 🧋'
+    : pose === 'scratch'
+    ? 'wicka-wicka DJ scratch!! 🎛️'
+    : pose === 'nod'
+    ? 'vibing so hard.. 😴🎵'
+    : playlist[trackIdx % playlist.length];
 
   return (
-    <BalloonPopWrapper accent={accent}>
+    <BalloonPopWrapper skeletonId="sitting" accent={accent}>
       {({ inflatePhrase }) => (
         <div
           className="select-none flex flex-col items-center"
@@ -625,11 +714,13 @@ export function SittingSkeletonKid({
           aria-hidden="true"
         >
           <span className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-sky-300 -mb-1 whitespace-nowrap">
-            {inflatePhrase ||
-              (isPlaying
-                ? playlist[trackIdx % playlist.length]
-                : '⏸ press play on boombox!')}
+            {inflatePhrase || witnessPhrase || poseCaption}
           </span>
+          {pose === 'nod' && !inflatePhrase && (
+            <span className="font-mono text-[9px] font-black text-sky-600 dark:text-sky-300 animate-pulse -mb-1">
+              Zzz
+            </span>
+          )}
 
       <svg
         width="92"
@@ -637,7 +728,7 @@ export function SittingSkeletonKid({
         viewBox="0 0 112 100"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="die-cut-skeleton overflow-visible"
+        className={`die-cut-skeleton overflow-visible ${pose === 'nod' ? 'animate-skel-nap' : ''}`}
       >
         {/* Multi-note / Heart floating music stream rising from headphones & boombox */}
         <g className="animate-skel-note-1">
@@ -686,7 +777,10 @@ export function SittingSkeletonKid({
         {/* Mini Pulsing Retro Boombox sitting beside the skeleton on the card ledge! */}
         <g
           className="animate-skel-boombox"
-          style={{ animationDuration: danceStyle === 'hyper' ? '0.28s' : '0.6s' }}
+          style={{
+            animationDuration:
+              pose === 'scratch' ? '0.18s' : danceStyle === 'hyper' ? '0.28s' : '0.6s',
+          }}
         >
           {/* Boombox handle */}
           <path
@@ -835,51 +929,106 @@ export function SittingSkeletonKid({
           strokeWidth="1.9"
         />
 
-        {/* Left Arm holding a little coffee/boba cup while leaning on the ledge */}
-        <path
-          d="M32 42 L20 53 L23 63"
-          stroke="#18181b"
-          strokeWidth="4.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M32 42 L20 53 L23 63"
-          stroke="#FAF8F4"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {/* Mini Coffee/Boba Cup on left side of ledge */}
-        <rect
-          x="13"
-          y="56"
-          width="8"
-          height="10"
-          rx="2"
-          fill="#FAF8F4"
-          stroke="#18181b"
-          strokeWidth="1.8"
-        />
-        <rect x="14" y="59" width="6" height="4" fill="#F59E0B" />
-        <line x1="17" y1="52" x2="19" y2="56" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" />
+        {/* Left Arm: raises boba cup to mouth during 'sip', else leans on the ledge */}
+        {pose === 'sip' ? (
+          <>
+            <path
+              d="M32 42 L24 34 L31 28"
+              stroke="#18181b"
+              strokeWidth="4.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M32 42 L24 34 L31 28"
+              stroke="#FAF8F4"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <rect
+              x="26"
+              y="22"
+              width="8"
+              height="10"
+              rx="2"
+              fill="#FAF8F4"
+              stroke="#18181b"
+              strokeWidth="1.8"
+            />
+            <rect x="27" y="25" width="6" height="4" fill="#F59E0B" />
+            <line x1="32" y1="19" x2="34" y2="23" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" />
+          </>
+        ) : (
+          <>
+            <path
+              d="M32 42 L20 53 L23 63"
+              stroke="#18181b"
+              strokeWidth="4.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M32 42 L20 53 L23 63"
+              stroke="#FAF8F4"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {/* Mini Coffee/Boba Cup on left side of ledge */}
+            <rect
+              x="13"
+              y="56"
+              width="8"
+              height="10"
+              rx="2"
+              fill="#FAF8F4"
+              stroke="#18181b"
+              strokeWidth="1.8"
+            />
+            <rect x="14" y="59" width="6" height="4" fill="#F59E0B" />
+            <line x1="17" y1="52" x2="19" y2="56" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" />
+          </>
+        )}
 
-        {/* Right Arm tapping near the boombox */}
-        <path
-          d="M50 42 L60 55 L58 65"
-          stroke="#18181b"
-          strokeWidth="4.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M50 42 L60 55 L58 65"
-          stroke="#FAF8F4"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="58" cy="65" r="3.5" fill={accent} stroke="#18181b" strokeWidth="2" />
+        {/* Right Arm: scratches boombox rapidly during 'scratch', else taps near ledge */}
+        {pose === 'scratch' ? (
+          <g className="animate-skel-arm-r">
+            <path
+              d="M50 42 L64 46 L74 51"
+              stroke="#18181b"
+              strokeWidth="4.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M50 42 L64 46 L74 51"
+              stroke="#FAF8F4"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle cx="74" cy="51" r="3.6" fill="#FACC15" stroke="#18181b" strokeWidth="2" />
+          </g>
+        ) : (
+          <>
+            <path
+              d="M50 42 L60 55 L58 65"
+              stroke="#18181b"
+              strokeWidth="4.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M50 42 L60 55 L58 65"
+              stroke="#FAF8F4"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle cx="58" cy="65" r="3.5" fill={accent} stroke="#18181b" strokeWidth="2" />
+          </>
+        )}
 
         {/* Pelvis sitting on ledge */}
         <ellipse
@@ -945,35 +1094,69 @@ export function JumpingSkeletonKid({
   };
   const phrases = phrasesByStyle[danceStyle] || phrasesByStyle.lofi;
   const [idx, setIdx] = useState(0);
+  const [mode, setMode] = useState('trampoline'); // 'trampoline' | 'spin' | 'helicopter' | 'wave'
+  const witnessPhrase = useWitnessPopReaction('jumping', [
+    'uh oh don’t pop me next!! 😰',
+    'WHOA did a buddy just burst?! 😱',
+    'jumping extra careful now!! 🤸🦴',
+  ]);
 
   useEffect(() => {
     setIdx(0);
-    const id = setInterval(() => setIdx((p) => (p + 1) % phrases.length), 3200);
-    return () => clearInterval(id);
+    const modePool =
+      danceStyle === 'hyper' || danceStyle === 'disco'
+        ? ['spin', 'helicopter', 'trampoline', 'wave']
+        : ['trampoline', 'helicopter', 'wave', 'spin'];
+    setMode(modePool[0]);
+    let timeoutId = null;
+
+    const scheduleNext = () => {
+      timeoutId = setTimeout(() => {
+        setIdx((p) => (p + 1) % phrases.length);
+        setMode((prev) => {
+          const candidates = modePool.filter((m) => m !== prev);
+          return candidates[Math.floor(Math.random() * candidates.length)] || 'trampoline';
+        });
+        scheduleNext();
+      }, randomInRange(2800, 5200));
+    };
+
+    scheduleNext();
+    return () => clearTimeout(timeoutId);
   }, [danceStyle]);
 
   const jumpAnimClass = !isPlaying
     ? 'animate-skel-groove'
-    : danceStyle === 'hyper' || danceStyle === 'disco'
+    : mode === 'helicopter'
+    ? 'animate-skel-helicopter'
+    : mode === 'spin'
     ? 'animate-skel-spin'
+    : mode === 'trampoline'
+    ? 'animate-skel-trampoline'
     : danceStyle === 'lofi'
     ? 'animate-skel-romantic-sway'
     : 'animate-skel-party-bhangra';
 
+  const activeCaption = !isPlaying
+    ? 'waiting for beat.. 🎵'
+    : mode === 'helicopter'
+    ? 'propeller liftoff!! 🚁'
+    : phrases[idx % phrases.length];
+
   return (
-    <BalloonPopWrapper accent={accent}>
+    <BalloonPopWrapper skeletonId="jumping" accent={accent}>
       {({ inflatePhrase }) => (
         <div
           className={`select-none flex flex-col items-center ${jumpAnimClass}`}
           style={{
             background: 'transparent',
-            animationDuration: danceStyle === 'hyper' ? '0.68s' : undefined,
+            animationDuration:
+              mode !== 'helicopter' && danceStyle === 'hyper' ? '0.68s' : undefined,
           }}
           aria-hidden="true"
         >
           <span className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-emerald-300 -mb-1 whitespace-nowrap">
-            {inflatePhrase ||
-              (isPlaying ? phrases[idx % phrases.length] : 'waiting for beat.. 🎵')}
+            {inflatePhrase || witnessPhrase || activeCaption}
           </span>
       <svg
         width="72"
@@ -1110,7 +1293,10 @@ export function JumpingSkeletonKid({
             strokeWidth="2"
           />
           <line x1="50" y1="8" x2="50" y2="3" stroke="#18181b" strokeWidth="2.4" />
-          <g className="animate-skel-propeller">
+          <g
+            className="animate-skel-propeller"
+            style={mode === 'helicopter' ? { animationDuration: '0.1s' } : undefined}
+          >
             <ellipse
               cx="50"
               cy="3"
@@ -1142,27 +1328,243 @@ export function JumpingSkeletonKid({
 
 /* ============================================================================
  * 5. THREE COMPLETELY DISTINCT AUTONOMOUS BACKGROUND SKELETON CHARACTERS (z-0)
- *    - Character A: Ollie the Skateboarder (Rides a skateboard, pops kickflips, reacts to scroll)
- *    - Character B: Sherlock Bones the Detective (Tiptoes with magnifying glass, inspects & hides)
- *    - Character C: B-Boy Ribs the Breakdancer & Balloon Kid (Headspins, freezes, & floats with a balloon)
+ *    - Character A: Ollie the Skateboarder (Kickflip, Wheelie, Moonwalk, 360 Spin, Cruise + Mind Postures)
+ *    - Character B: Sherlock Bones the Detective (Magnifying Scan, Robot, Shuffle, Dab, Bass Squat + Mind Postures)
+ *    - Character C: B-Boy Ribs the Breakdancer (Headspin, One-Hand Freeze, Windmill, Wave, Heart Balloon + Mind Postures)
  * ============================================================================ */
+
+const SKATER_MOVE_ANIMS = {
+  kickflip: 'animate-skel-ollie',
+  wheelie: 'animate-skel-wheelie',
+  moonwalk: 'animate-skel-moonwalk',
+  spin360: 'animate-skel-spin',
+  chill_cruise: 'animate-skel-skate-cruise',
+};
+
+const DETECTIVE_MOVE_ANIMS = {
+  bass_squat: 'animate-skel-bass-pump',
+  robot: 'animate-skel-robot',
+  shuffle: 'animate-skel-shuffle',
+  dab: 'animate-skel-dab',
+  rose_sway: 'animate-skel-romantic-sway',
+};
+
+const BBOY_MOVE_ANIMS = {
+  headspin: 'animate-skel-headspin',
+  freeze: 'animate-skel-groove',
+  windmill: 'animate-skel-windmill',
+  balloon: 'animate-skel-balloon',
+  wave: 'animate-skel-wave-groove',
+};
+
+function resolveCharacterAnimClass(intent, danceMove, napping, moveAnimMap) {
+  if (napping || intent === 'nap') return '';
+  if (intent === 'witness_panic') return 'animate-skel-panic-shiver';
+  if (intent === 'chase' || intent === 'flee' || intent === 'grudge_dodge') {
+    return 'animate-skel-sprint';
+  }
+  if (intent === 'chat') return 'animate-skel-chat-nod';
+  if (intent === 'investigate_cursor' || intent === 'patrol_section') {
+    return 'animate-skel-tiptoe';
+  }
+  if (intent === 'just_reassembled') return 'animate-skel-groove';
+  return moveAnimMap[danceMove] || Object.values(moveAnimMap)[0] || 'animate-skel-groove';
+}
+
+function SpeedTrailLines({ color = '#18181b' }) {
+  return (
+    <g opacity="0.65">
+      <line x1="2" y1="42" x2="18" y2="42" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+      <line x1="-2" y1="54" x2="15" y2="54" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+      <line x1="4" y1="66" x2="17" y2="66" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    </g>
+  );
+}
+
+/**
+ * Shared expression renderer so every mind state (nap, panic shock, angry grudge,
+ * sprint effort, robot visor, boss shades, dreamy, curious) looks unmistakably different.
+ */
+function SkeletonFace({
+  cxL,
+  cxR,
+  cy,
+  mouthY,
+  intent,
+  napping,
+  danceStyle,
+  danceMove,
+  shadesColor = '#FACC15',
+}) {
+  const isSleepy = napping || intent === 'nap';
+  const isPanic = intent === 'witness_panic';
+  const isAngry = intent === 'just_reassembled';
+  const isSprint = intent === 'chase' || intent === 'flee' || intent === 'grudge_dodge';
+  const isRobot = danceMove === 'robot' && !isSleepy && !isPanic && !isAngry && !isSprint;
+  const isShades =
+    !isSleepy &&
+    !isPanic &&
+    !isAngry &&
+    !isSprint &&
+    !isRobot &&
+    intent !== 'investigate_cursor' &&
+    intent !== 'patrol_section' &&
+    (danceStyle === 'hyper' || danceMove === 'dab' || danceMove === 'bass_squat');
+  const isRomantic =
+    danceStyle === 'lofi' &&
+    !isSleepy &&
+    !isPanic &&
+    !isAngry &&
+    !isSprint &&
+    !isRobot &&
+    !isShades &&
+    intent !== 'investigate_cursor' &&
+    intent !== 'patrol_section';
+
+  const midX = (cxL + cxR) / 2;
+
+  if (isSleepy) {
+    return (
+      <>
+        <line x1={cxL - 4} y1={cy} x2={cxL + 4} y2={cy} stroke="#18181b" strokeWidth="2.3" strokeLinecap="round" />
+        <line x1={cxR - 4} y1={cy} x2={cxR + 4} y2={cy} stroke="#18181b" strokeWidth="2.3" strokeLinecap="round" />
+        <path d={`M${midX - 4} ${mouthY} Q${midX} ${mouthY + 2} ${midX + 4} ${mouthY}`} stroke="#18181b" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      </>
+    );
+  }
+
+  if (isPanic) {
+    return (
+      <>
+        <circle cx={cxL} cy={cy} r="5.1" fill="#FFFFFF" stroke="#18181b" strokeWidth="2" />
+        <circle cx={cxL} cy={cy} r="2" fill="#18181b" />
+        <circle cx={cxR} cy={cy} r="5.1" fill="#FFFFFF" stroke="#18181b" strokeWidth="2" />
+        <circle cx={cxR} cy={cy} r="2" fill="#18181b" />
+        <ellipse cx={midX} cy={mouthY + 1} rx="4" ry="4.8" fill="#18181b" />
+      </>
+    );
+  }
+
+  if (isAngry) {
+    return (
+      <>
+        <line x1={cxL - 5} y1={cy - 4.5} x2={cxL + 4} y2={cy - 1.5} stroke="#18181b" strokeWidth="2.4" strokeLinecap="round" />
+        <line x1={cxR + 5} y1={cy - 4.5} x2={cxR - 4} y2={cy - 1.5} stroke="#18181b" strokeWidth="2.4" strokeLinecap="round" />
+        <circle cx={cxL} cy={cy + 1} r="3.4" fill="#18181b" />
+        <circle cx={cxR} cy={cy + 1} r="3.4" fill="#18181b" />
+        <path d={`M${midX - 6} ${mouthY + 2} Q${midX} ${mouthY - 2.5} ${midX + 6} ${mouthY + 2}`} stroke="#18181b" strokeWidth="2" strokeLinecap="round" fill="none" />
+      </>
+    );
+  }
+
+  if (isRobot) {
+    return (
+      <>
+        <rect x={cxL - 5} y={cy - 4} width={cxR - cxL + 10} height="7.5" rx="2" fill="#0F172A" stroke="#38BDF8" strokeWidth="1.6" />
+        <circle cx={cxL} cy={cy - 0.5} r="2" fill="#38BDF8" />
+        <circle cx={cxR} cy={cy - 0.5} r="2" fill="#38BDF8" />
+        <rect x={midX - 5} y={mouthY - 1} width="10" height="3" rx="1" fill="#18181b" />
+      </>
+    );
+  }
+
+  if (isShades) {
+    return (
+      <>
+        <rect x={cxL - 6} y={cy - 4} width="11" height="6" rx="1" fill="#18181b" stroke={shadesColor} strokeWidth="1.4" />
+        <rect x={cxR - 5} y={cy - 4} width="11" height="6" rx="1" fill="#18181b" stroke={shadesColor} strokeWidth="1.4" />
+        <line x1={cxL + 5} y1={cy - 1} x2={cxR - 5} y2={cy - 1} stroke="#18181b" strokeWidth="2" />
+        <path d={`M${midX - 5} ${mouthY} Q${midX} ${mouthY + 3.5} ${midX + 5} ${mouthY}`} stroke="#18181b" strokeWidth="2" strokeLinecap="round" fill="none" />
+      </>
+    );
+  }
+
+  if (isRomantic) {
+    return (
+      <>
+        <ellipse cx={cxL - 5} cy={cy + 4} rx="3" ry="1.6" fill="#F472B6" opacity="0.75" />
+        <ellipse cx={cxR + 5} cy={cy + 4} rx="3" ry="1.6" fill="#F472B6" opacity="0.75" />
+        <path d={`M${cxL - 3} ${cy} Q${cxL} ${cy - 3} ${cxL + 3} ${cy}`} stroke="#18181b" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+        <path d={`M${cxR - 3} ${cy} Q${cxR} ${cy - 3} ${cxR + 3} ${cy}`} stroke="#18181b" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+        <path d={`M${midX - 5} ${mouthY} Q${midX} ${mouthY + 3.2} ${midX + 5} ${mouthY}`} stroke="#18181b" strokeWidth="2" strokeLinecap="round" fill="none" />
+      </>
+    );
+  }
+
+  const r = isSprint ? 4.4 : 3.8;
+  return (
+    <>
+      <circle cx={cxL} cy={cy} r={r} fill="#18181b" />
+      <circle cx={cxR} cy={cy} r={r} fill="#18181b" />
+      <circle cx={cxL + 1.2} cy={cy - 1.2} r="1.4" fill="#FAF8F4" />
+      <circle cx={cxR + 1.2} cy={cy - 1.2} r="1.4" fill="#FAF8F4" />
+      <path d={`M${midX - 5} ${mouthY} Q${midX} ${mouthY + 3.5} ${midX + 5} ${mouthY}`} stroke="#18181b" strokeWidth="2" strokeLinecap="round" fill="none" />
+    </>
+  );
+}
 
 /**
  * CHARACTER A SVG: OLLIE THE SKATEBOARDER KID
  */
-function SkaterSkeletonSVG({ trick = false, danceStyle = 'lofi' }) {
+function SkaterSkeletonSVG({
+  trick = false,
+  danceStyle = 'lofi',
+  intent = 'showoff',
+  danceMove = 'kickflip',
+  napping = false,
+}) {
   const isHyper = danceStyle === 'hyper';
   const isRomantic = danceStyle === 'lofi';
-  const isDisco = danceStyle === 'disco';
-  const isParty = danceStyle === 'party';
+  const isPanic = intent === 'witness_panic';
+  const isAngry = intent === 'just_reassembled';
+  const isSprint = intent === 'chase' || intent === 'flee' || intent === 'grudge_dodge';
+  const isChat = intent === 'chat';
+  const activeMove = danceMove;
+  const animClass = resolveCharacterAnimClass(intent, activeMove, napping, SKATER_MOVE_ANIMS);
 
-  const animClass = isDisco
-    ? 'animate-skel-spin'
-    : isParty
-    ? 'animate-skel-party-bhangra'
-    : isHyper || trick
-    ? 'animate-skel-ollie'
-    : 'animate-skel-romantic-sway';
+  const armLPath = isPanic
+    ? 'M42 40 L24 28 L31 18'
+    : isAngry
+    ? 'M42 40 L27 50 L39 60'
+    : activeMove === 'wheelie' && !isChat && !napping
+    ? 'M42 40 L20 38 L8 36'
+    : activeMove === 'kickflip' || activeMove === 'spin360'
+    ? 'M42 40 L24 22 L16 12'
+    : 'M42 40 L22 36 L14 28';
+
+  const armRPath = isPanic
+    ? 'M58 40 L76 28 L69 18'
+    : isAngry
+    ? 'M58 40 L73 50 L57 60'
+    : isChat
+    ? 'M58 40 L74 34 L84 22'
+    : activeMove === 'wheelie' && !napping
+    ? 'M58 40 L80 30 L94 24'
+    : activeMove === 'kickflip' || activeMove === 'spin360'
+    ? 'M58 40 L76 22 L84 12'
+    : 'M58 40 L78 34 L88 26';
+
+  const handL = isPanic
+    ? [31, 18]
+    : isAngry
+    ? [39, 60]
+    : activeMove === 'wheelie'
+    ? [7, 36]
+    : activeMove === 'kickflip' || activeMove === 'spin360'
+    ? [15, 11]
+    : [13, 27];
+
+  const handR = isPanic
+    ? [69, 18]
+    : isAngry
+    ? [57, 60]
+    : isChat
+    ? [84, 21]
+    : activeMove === 'wheelie'
+    ? [95, 23]
+    : activeMove === 'kickflip' || activeMove === 'spin360'
+    ? [85, 11]
+    : [89, 25];
 
   return (
     <svg
@@ -1174,8 +1576,9 @@ function SkaterSkeletonSVG({ trick = false, danceStyle = 'lofi' }) {
       className={`die-cut-skeleton select-none overflow-visible ${animClass}`}
       style={{ background: 'transparent' }}
     >
-      {/* Floating Pink Hearts for Romantic / Thinking of You ('lofi') OR Fire Sparks for Brabus ('hyper') */}
-      {isRomantic && (
+      {isSprint && <SpeedTrailLines color="#FACC15" />}
+
+      {isRomantic && !isPanic && !napping && !isSprint && (
         <>
           <g className="animate-skel-note-1">
             <text x="16" y="18" fill="#EC4899" fontSize="14" fontWeight="bold">
@@ -1189,7 +1592,7 @@ function SkaterSkeletonSVG({ trick = false, danceStyle = 'lofi' }) {
           </g>
         </>
       )}
-      {isHyper && (
+      {isHyper && !isPanic && !napping && (
         <g className="animate-skel-note-1">
           <text x="76" y="18" fontSize="14">
             🔥
@@ -1198,7 +1601,7 @@ function SkaterSkeletonSVG({ trick = false, danceStyle = 'lofi' }) {
       )}
 
       {/* Backwards Skater Cap & Skull */}
-      <g className="animate-skel-head">
+      <g className={napping ? '' : 'animate-skel-head'}>
         <rect
           x="34"
           y="10"
@@ -1209,7 +1612,6 @@ function SkaterSkeletonSVG({ trick = false, danceStyle = 'lofi' }) {
           stroke="#18181b"
           strokeWidth="2.3"
         />
-        {/* Cap color changes with song vibe */}
         <path
           d="M34 17 C34 7, 68 7, 68 17 Z"
           fill={isRomantic ? '#EC4899' : isHyper ? '#FACC15' : '#10B981'}
@@ -1218,218 +1620,56 @@ function SkaterSkeletonSVG({ trick = false, danceStyle = 'lofi' }) {
         />
         <path d="M24 17 L40 17" stroke="#18181b" strokeWidth="3.2" strokeLinecap="round" />
 
-        {/* Eyes: Boss Shades for Brabus ('hyper') vs Dreamy Happy Eyes for Thinking of You ('lofi') */}
-        {isHyper ? (
-          <>
-            <rect
-              x="39"
-              y="19"
-              width="11"
-              height="6"
-              rx="1"
-              fill="#18181b"
-              stroke="#FACC15"
-              strokeWidth="1.4"
-            />
-            <rect
-              x="53"
-              y="19"
-              width="11"
-              height="6"
-              rx="1"
-              fill="#18181b"
-              stroke="#FACC15"
-              strokeWidth="1.4"
-            />
-            <line x1="50" y1="22" x2="53" y2="22" stroke="#18181b" strokeWidth="2" />
-          </>
-        ) : isRomantic ? (
-          <>
-            <ellipse cx="40" cy="27" rx="3" ry="1.6" fill="#F472B6" opacity="0.75" />
-            <ellipse cx="62" cy="27" rx="3" ry="1.6" fill="#F472B6" opacity="0.75" />
-            <path
-              d="M42 23 Q45 20 48 23"
-              stroke="#18181b"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              fill="none"
-            />
-            <path
-              d="M55 23 Q58 20 61 23"
-              stroke="#18181b"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              fill="none"
-            />
-          </>
-        ) : (
-          <>
-            <circle cx="46" cy="23" r="3.8" fill="#18181b" />
-            <circle cx="59" cy="23" r="3.8" fill="#18181b" />
-            <circle cx="47.2" cy="21.8" r="1.3" fill="#FAF8F4" />
-            <circle cx="60.2" cy="21.8" r="1.3" fill="#FAF8F4" />
-          </>
-        )}
-        <path
-          d="M47 30 Q53 33 58 29"
-          stroke="#18181b"
-          strokeWidth="2"
-          strokeLinecap="round"
-          fill="none"
+        <SkeletonFace
+          cxL={45}
+          cxR={59}
+          cy={23}
+          mouthY={30}
+          intent={intent}
+          napping={napping}
+          danceStyle={danceStyle}
+          danceMove={activeMove}
+          shadesColor="#FACC15"
         />
       </g>
 
-      {/* Skater Arms: High Power V-Pump for Brabus ('hyper') vs Smooth Glide for Romantic ('lofi') */}
-      <g className={isHyper || isParty ? 'animate-skel-arm-l' : ''}>
-        <path
-          d={isHyper ? 'M42 40 L24 22 L16 12' : 'M42 40 L22 36 L14 28'}
-          stroke="#18181b"
-          strokeWidth="4.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d={isHyper ? 'M42 40 L24 22 L16 12' : 'M42 40 L22 36 L14 28'}
-          stroke="#FAF8F4"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle
-          cx={isHyper ? '15' : '13'}
-          cy={isHyper ? '11' : '27'}
-          r="3.6"
-          fill={isRomantic ? '#EC4899' : '#FACC15'}
-          stroke="#18181b"
-          strokeWidth="1.9"
-        />
+      {/* Left Arm */}
+      <g className={!napping && (activeMove === 'kickflip' || activeMove === 'spin360') ? 'animate-skel-arm-l' : ''}>
+        <path d={armLPath} stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={armLPath} stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={handL[0]} cy={handL[1]} r="3.6" fill={isRomantic ? '#EC4899' : '#FACC15'} stroke="#18181b" strokeWidth="1.9" />
       </g>
 
-      <g className={isHyper || isParty ? 'animate-skel-arm-r' : ''}>
-        <path
-          d={isHyper ? 'M58 40 L76 22 L84 12' : 'M58 40 L78 34 L88 26'}
-          stroke="#18181b"
-          strokeWidth="4.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d={isHyper ? 'M58 40 L76 22 L84 12' : 'M58 40 L78 34 L88 26'}
-          stroke="#FAF8F4"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle
-          cx={isHyper ? '85' : '89'}
-          cy={isHyper ? '11' : '25'}
-          r="3.6"
-          fill={isRomantic ? '#EC4899' : '#FACC15'}
-          stroke="#18181b"
-          strokeWidth="1.9"
-        />
+      {/* Right Arm */}
+      <g className={!napping && (isChat || activeMove === 'kickflip' || activeMove === 'spin360') ? 'animate-skel-arm-r' : ''}>
+        <path d={armRPath} stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={armRPath} stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={handR[0]} cy={handR[1]} r="3.6" fill={isRomantic ? '#EC4899' : '#FACC15'} stroke="#18181b" strokeWidth="1.9" />
       </g>
 
       {/* Angled Skater Ribcage */}
       <line x1="50" y1="35" x2="48" y2="62" stroke="#18181b" strokeWidth="4.6" />
       <line x1="50" y1="35" x2="48" y2="62" stroke="#FAF8F4" strokeWidth="2" />
-      <rect
-        x="39"
-        y="42"
-        width="20"
-        height="4.4"
-        rx="2.2"
-        fill="#FAF8F4"
-        stroke="#18181b"
-        strokeWidth="1.9"
-      />
-      <rect
-        x="40"
-        y="49"
-        width="17"
-        height="4.2"
-        rx="2"
-        fill="#FAF8F4"
-        stroke="#18181b"
-        strokeWidth="1.9"
-      />
-      <ellipse
-        cx="48"
-        cy="61"
-        rx="9"
-        ry="3.8"
-        fill={isRomantic ? '#EC4899' : '#FACC15'}
-        stroke="#18181b"
-        strokeWidth="2"
-      />
+      <rect x="39" y="42" width="20" height="4.4" rx="2.2" fill="#FAF8F4" stroke="#18181b" strokeWidth="1.9" />
+      <rect x="40" y="49" width="17" height="4.2" rx="2" fill="#FAF8F4" stroke="#18181b" strokeWidth="1.9" />
+      <ellipse cx="48" cy="61" rx="9" ry="3.8" fill={isRomantic ? '#EC4899' : '#FACC15'} stroke="#18181b" strokeWidth="2" />
 
       {/* Bent Skater Legs planted on the skateboard */}
-      <path
-        d="M43 63 L33 74 L36 85"
-        stroke="#18181b"
-        strokeWidth="4.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M43 63 L33 74 L36 85"
-        stroke="#FAF8F4"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <rect
-        x="30"
-        y="83"
-        width="11"
-        height="5"
-        rx="2.5"
-        fill={isHyper ? '#FACC15' : '#EC4899'}
-        stroke="#18181b"
-        strokeWidth="1.9"
-      />
+      <path d="M43 63 L33 74 L36 85" stroke="#18181b" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M43 63 L33 74 L36 85" stroke="#FAF8F4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="30" y="83" width="11" height="5" rx="2.5" fill={isHyper ? '#FACC15' : '#EC4899'} stroke="#18181b" strokeWidth="1.9" />
 
-      <path
-        d="M53 63 L65 74 L63 85"
-        stroke="#18181b"
-        strokeWidth="4.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M53 63 L65 74 L63 85"
-        stroke="#FAF8F4"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <rect
-        x="58"
-        y="83"
-        width="11"
-        height="5"
-        rx="2.5"
-        fill={isHyper ? '#FACC15' : '#EC4899'}
-        stroke="#18181b"
-        strokeWidth="1.9"
-      />
+      <path d="M53 63 L65 74 L63 85" stroke="#18181b" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M53 63 L65 74 L63 85" stroke="#FAF8F4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="58" y="83" width="11" height="5" rx="2.5" fill={isHyper ? '#FACC15' : '#EC4899'} stroke="#18181b" strokeWidth="1.9" />
 
-      {/* Skateboard Deck + Trucks + Wheels (Continuously flips during Brabus 'hyper'!) */}
-      <g className={isHyper || trick ? 'animate-skel-kickflip' : ''}>
-        <path
-          d="M16 86 Q22 90 30 90 L70 90 Q78 90 84 86"
-          stroke="#18181b"
-          strokeWidth="6.5"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M16 86 Q22 90 30 90 L70 90 Q78 90 84 86"
-          stroke={isRomantic ? '#EC4899' : '#FACC15'}
-          strokeWidth="3"
-          strokeLinecap="round"
-          fill="none"
-        />
+      {/* Skateboard Deck (Flips on kickflip, pops front wheel up on wheelie) */}
+      <g
+        className={!napping && (activeMove === 'kickflip' || trick) ? 'animate-skel-kickflip' : ''}
+        transform={activeMove === 'wheelie' && !napping ? 'rotate(-18 50 90)' : undefined}
+      >
+        <path d="M16 86 Q22 90 30 90 L70 90 Q78 90 84 86" stroke="#18181b" strokeWidth="6.5" strokeLinecap="round" fill="none" />
+        <path d="M16 86 Q22 90 30 90 L70 90 Q78 90 84 86" stroke={isRomantic ? '#EC4899' : '#FACC15'} strokeWidth="3" strokeLinecap="round" fill="none" />
         <circle cx="34" cy="95" r="4.5" fill="#EC4899" stroke="#18181b" strokeWidth="2" />
         <circle cx="34" cy="95" r="1.4" fill="#FAF8F4" />
         <circle cx="66" cy="95" r="4.5" fill="#EC4899" stroke="#18181b" strokeWidth="2" />
@@ -1440,21 +1680,57 @@ function SkaterSkeletonSVG({ trick = false, danceStyle = 'lofi' }) {
 }
 
 /**
- * CHARACTER B SVG: SHERLOCK BONES (Transforms between Heavy Bass Bouncer for Brabus & Romantic Rose Daydreamer for Thinking of You!)
+ * CHARACTER B SVG: SHERLOCK BONES (Robot, Dab, Shuffle, Bass Squat, Magnifying Scan & Mind Postures!)
  */
-function DetectiveSkeletonSVG({ inspecting = false, danceStyle = 'lofi' }) {
+function DetectiveSkeletonSVG({
+  inspecting = false,
+  danceStyle = 'lofi',
+  intent = 'patrol_section',
+  danceMove = 'bass_squat',
+  napping = false,
+}) {
   const isHyper = danceStyle === 'hyper';
   const isRomantic = danceStyle === 'lofi';
-  const isDisco = danceStyle === 'disco';
-  const isParty = danceStyle === 'party';
+  const isPanic = intent === 'witness_panic';
+  const isAngry = intent === 'just_reassembled';
+  const isSprint = intent === 'chase' || intent === 'flee' || intent === 'grudge_dodge';
+  const isChat = intent === 'chat';
+  const isScanning =
+    (intent === 'investigate_cursor' || intent === 'patrol_section' || inspecting) &&
+    !isPanic &&
+    !isAngry &&
+    !isSprint &&
+    !napping &&
+    intent !== 'dance_off' &&
+    intent !== 'showoff';
 
-  const animClass = isHyper
-    ? 'animate-skel-bass-pump'
-    : isParty
-    ? 'animate-skel-party-bhangra'
-    : isDisco
-    ? 'animate-skel-spin'
-    : 'animate-skel-romantic-sway';
+  const isDab = danceMove === 'dab' && !isPanic && !isAngry && !isSprint && !napping && !isScanning;
+  const isRobot = danceMove === 'robot' && !isPanic && !isAngry && !isSprint && !napping && !isScanning;
+  const animClass = resolveCharacterAnimClass(intent, danceMove, napping, DETECTIVE_MOVE_ANIMS);
+
+  const armLPath = isPanic
+    ? 'M38 43 L20 30 L27 20'
+    : isAngry
+    ? 'M38 43 L24 52 L36 62'
+    : isDab
+    ? 'M38 43 L24 28 L55 21'
+    : isRobot
+    ? 'M38 43 L20 43 L20 26'
+    : danceMove === 'bass_squat' || danceMove === 'shuffle'
+    ? 'M38 43 L22 25 L16 14'
+    : 'M38 43 L24 52 L28 60';
+
+  const armRPath = isPanic
+    ? 'M54 43 L72 30 L65 20'
+    : isAngry
+    ? 'M54 43 L68 52 L54 62'
+    : isDab
+    ? 'M54 43 L74 28 L92 14'
+    : isRobot
+    ? 'M54 43 L72 43 L72 58'
+    : isChat
+    ? 'M54 43 L72 34 L82 22'
+    : 'M54 43 L72 25 L78 14';
 
   return (
     <svg
@@ -1466,15 +1742,16 @@ function DetectiveSkeletonSVG({ inspecting = false, danceStyle = 'lofi' }) {
       className={`die-cut-skeleton select-none overflow-visible ${animClass}`}
       style={{ background: 'transparent' }}
     >
-      {/* Floating Pink Hearts in Romantic ('lofi') OR Bass Waves in Brabus ('hyper') */}
-      {isRomantic && (
+      {isSprint && <SpeedTrailLines color="#38BDF8" />}
+
+      {isRomantic && !isPanic && !napping && !isScanning && (
         <g className="animate-skel-note-1">
           <text x="74" y="14" fill="#EC4899" fontSize="14" fontWeight="bold">
             ♥
           </text>
         </g>
       )}
-      {isHyper && (
+      {danceMove === 'bass_squat' && !isPanic && !napping && !isScanning && (
         <g className="animate-skel-note-2">
           <text x="14" y="18" fontSize="13">
             🔊
@@ -1482,8 +1759,11 @@ function DetectiveSkeletonSVG({ inspecting = false, danceStyle = 'lofi' }) {
         </g>
       )}
 
-      {/* Skull & Cap */}
-      <g className="animate-skel-head">
+      {/* Skull & Cap (tilts into dab during DAB pose!) */}
+      <g
+        className={napping || isDab ? '' : 'animate-skel-head'}
+        transform={isDab ? 'rotate(-16 47 24)' : undefined}
+      >
         <rect
           x="30"
           y="12"
@@ -1496,235 +1776,136 @@ function DetectiveSkeletonSVG({ inspecting = false, danceStyle = 'lofi' }) {
         />
         <path
           d="M28 17 C28 6, 66 6, 66 17 Z"
-          fill={isHyper ? '#18181b' : isRomantic ? '#EC4899' : '#3B82F6'}
+          fill={isRobot ? '#38BDF8' : isHyper ? '#18181b' : isRomantic ? '#EC4899' : '#3B82F6'}
           stroke="#18181b"
           strokeWidth="2"
         />
         <path d="M22 17 L72 17" stroke="#18181b" strokeWidth="2.8" strokeLinecap="round" />
         <circle cx="47" cy="7" r="2.2" fill="#FACC15" stroke="#18181b" strokeWidth="1.5" />
 
-        {isHyper ? (
-          <>
-            <rect
-              x="34"
-              y="20"
-              width="12"
-              height="6"
-              rx="1.2"
-              fill="#18181b"
-              stroke="#FACC15"
-              strokeWidth="1.5"
-            />
-            <rect
-              x="49"
-              y="20"
-              width="12"
-              height="6"
-              rx="1.2"
-              fill="#18181b"
-              stroke="#FACC15"
-              strokeWidth="1.5"
-            />
-            <path d="M41 31 Q47 36 53 31 Z" fill="#18181b" />
-          </>
-        ) : (
-          <>
-            <ellipse cx="36" cy="28" rx="3" ry="1.6" fill="#F472B6" opacity="0.7" />
-            <ellipse cx="58" cy="28" rx="3" ry="1.6" fill="#F472B6" opacity="0.7" />
-            <circle cx="42" cy="24" r="3.8" fill="#18181b" />
-            <circle cx="54" cy="24" r="3.8" fill="#18181b" />
-            <circle cx="43" cy="22.8" r="1.4" fill="#FAF8F4" />
-            <circle cx="55" cy="22.8" r="1.4" fill="#FAF8F4" />
-            <path
-              d="M42 31 Q48 34 54 31"
-              stroke="#18181b"
-              strokeWidth="2"
-              strokeLinecap="round"
-              fill="none"
-            />
-          </>
-        )}
+        <SkeletonFace
+          cxL={41}
+          cxR={54}
+          cy={24}
+          mouthY={31}
+          intent={intent}
+          napping={napping}
+          danceStyle={danceStyle}
+          danceMove={danceMove}
+          shadesColor="#FACC15"
+        />
       </g>
 
       {/* Torso */}
       <line x1="46" y1="37" x2="45" y2="65" stroke="#18181b" strokeWidth="4.6" />
       <line x1="46" y1="37" x2="45" y2="65" stroke="#FAF8F4" strokeWidth="2" />
-      {/* Gold Chain for Brabus ('hyper')! */}
-      {isHyper && (
-        <path
-          d="M38 39 Q46 49 54 39"
-          stroke="#FACC15"
-          strokeWidth="3"
-          strokeLinecap="round"
-          fill="none"
-        />
+      {(danceMove === 'bass_squat' || danceMove === 'dab') && !napping && (
+        <path d="M38 39 Q46 49 54 39" stroke="#FACC15" strokeWidth="3" strokeLinecap="round" fill="none" />
       )}
-      <rect
-        x="36"
-        y="44"
-        width="19"
-        height="4.4"
-        rx="2.2"
-        fill="#FAF8F4"
-        stroke="#18181b"
-        strokeWidth="1.9"
-      />
-      <rect
-        x="37"
-        y="51"
-        width="16"
-        height="4.2"
-        rx="2"
-        fill="#FAF8F4"
-        stroke="#18181b"
-        strokeWidth="1.9"
-      />
-      <ellipse
-        cx="45"
-        cy="64"
-        rx="9"
-        ry="3.8"
-        fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#3B82F6'}
-        stroke="#18181b"
-        strokeWidth="2"
-      />
+      <rect x="36" y="44" width="19" height="4.4" rx="2.2" fill="#FAF8F4" stroke="#18181b" strokeWidth="1.9" />
+      <rect x="37" y="51" width="16" height="4.2" rx="2" fill="#FAF8F4" stroke="#18181b" strokeWidth="1.9" />
+      <ellipse cx="45" cy="64" rx="9" ry="3.8" fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#3B82F6'} stroke="#18181b" strokeWidth="2" />
 
-      {/* Left Arm: Raised pumping in Brabus ('hyper') vs Tucked in Romantic ('lofi') */}
-      <g className={isHyper || isParty ? 'animate-skel-arm-l' : ''}>
-        <path
-          d={isHyper ? 'M38 43 L22 25 L16 14' : 'M38 43 L24 52 L28 60'}
-          stroke="#18181b"
-          strokeWidth="4.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d={isHyper ? 'M38 43 L22 25 L16 14' : 'M38 43 L24 52 L28 60'}
-          stroke="#FAF8F4"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {isHyper && (
+      {/* Left Arm */}
+      <g className={!napping && (danceMove === 'bass_squat' || danceMove === 'shuffle') && !isPanic && !isAngry ? 'animate-skel-arm-l' : ''}>
+        <path d={armLPath} stroke="#18181b" strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={armLPath} stroke="#FAF8F4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        {isPanic && <circle cx="27" cy="20" r="3.6" fill="#38BDF8" stroke="#18181b" strokeWidth="1.8" />}
+        {isAngry && <circle cx="36" cy="62" r="3.6" fill="#38BDF8" stroke="#18181b" strokeWidth="1.8" />}
+        {isRobot && <circle cx="20" cy="25" r="3.8" fill="#38BDF8" stroke="#18181b" strokeWidth="1.8" />}
+        {(danceMove === 'bass_squat' || danceMove === 'shuffle') && !isPanic && !isAngry && (
           <circle cx="15" cy="13" r="3.8" fill="#FACC15" stroke="#18181b" strokeWidth="1.8" />
         )}
       </g>
 
-      {/* Right Arm: Raised pumping for Brabus ('hyper') OR holding a Red Rose & Love Note for Thinking of You ('lofi')! */}
-      {isHyper || isParty ? (
-        <g className="animate-skel-arm-r">
-          <path
-            d="M54 43 L72 25 L78 14"
-            stroke="#18181b"
-            strokeWidth="4.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M54 43 L72 25 L78 14"
-            stroke="#FAF8F4"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <circle cx="79" cy="13" r="3.8" fill="#FACC15" stroke="#18181b" strokeWidth="1.8" />
-        </g>
-      ) : (
+      {/* Right Arm: Magnifying Glass while scanning, Red Rose on rose_sway, or expressive dance/mind pose */}
+      {isScanning ? (
         <g className="animate-skel-magnify">
-          <path
-            d="M54 43 L68 38 L74 30"
-            stroke="#18181b"
-            strokeWidth="4.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M54 43 L68 38 L74 30"
-            stroke="#FAF8F4"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Red Rose & Stem for Romantic ('lofi') */}
+          <path d="M54 43 L68 38 L74 30" stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M54 43 L68 38 L74 30" stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          <line x1="74" y1="30" x2="79" y2="23" stroke="#18181b" strokeWidth="3.2" strokeLinecap="round" />
+          <circle cx="84" cy="18" r="7.5" fill="rgba(56, 189, 248, 0.32)" stroke="#18181b" strokeWidth="2.2" />
+          <circle cx="82" cy="16" r="2" fill="#FAF8F4" opacity="0.85" />
+        </g>
+      ) : danceMove === 'rose_sway' && !isPanic && !isAngry && !isChat && !napping ? (
+        <g className="animate-skel-magnify">
+          <path d="M54 43 L68 38 L74 30" stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M54 43 L68 38 L74 30" stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M74 32 L82 18" stroke="#10B981" strokeWidth="2.6" strokeLinecap="round" />
           <circle cx="83" cy="16" r="6" fill="#F43F5E" stroke="#18181b" strokeWidth="1.8" />
           <path d="M81 14 Q83 18 86 15" stroke="#FAF8F4" strokeWidth="1.2" fill="none" />
         </g>
+      ) : (
+        <g className={!napping && (isChat || danceMove === 'bass_squat' || danceMove === 'shuffle') && !isPanic && !isAngry ? 'animate-skel-arm-r' : ''}>
+          <path d={armRPath} stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={armRPath} stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          <circle
+            cx={isPanic ? 65 : isAngry ? 54 : isDab ? 92 : isRobot ? 72 : isChat ? 83 : 79}
+            cy={isPanic ? 20 : isAngry ? 62 : isDab ? 14 : isRobot ? 58 : isChat ? 21 : 13}
+            r="3.8"
+            fill={isHyper ? '#FACC15' : '#38BDF8'}
+            stroke="#18181b"
+            strokeWidth="1.8"
+          />
+        </g>
       )}
 
       {/* Legs */}
-      <g className="animate-skel-leg-l">
-        <path
-          d="M39 66 L33 80 L37 92"
-          stroke="#18181b"
-          strokeWidth="4.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M39 66 L33 80 L37 92"
-          stroke="#FAF8F4"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <rect
-          x="31"
-          y="90"
-          width="11"
-          height="5"
-          rx="2.5"
-          fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#3B82F6'}
-          stroke="#18181b"
-          strokeWidth="1.9"
-        />
+      <g className={napping ? '' : 'animate-skel-leg-l'}>
+        <path d="M39 66 L33 80 L37 92" stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M39 66 L33 80 L37 92" stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="31" y="90" width="11" height="5" rx="2.5" fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#3B82F6'} stroke="#18181b" strokeWidth="1.9" />
       </g>
-      <g className="animate-skel-leg-r">
-        <path
-          d="M48 66 L56 80 L52 92"
-          stroke="#18181b"
-          strokeWidth="4.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M48 66 L56 80 L52 92"
-          stroke="#FAF8F4"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <rect
-          x="48"
-          y="90"
-          width="11"
-          height="5"
-          rx="2.5"
-          fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#3B82F6'}
-          stroke="#18181b"
-          strokeWidth="1.9"
-        />
+      <g className={napping ? '' : 'animate-skel-leg-r'}>
+        <path d="M48 66 L56 80 L52 92" stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M48 66 L56 80 L52 92" stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="48" y="90" width="11" height="5" rx="2.5" fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#3B82F6'} stroke="#18181b" strokeWidth="1.9" />
       </g>
     </svg>
   );
 }
 
 /**
- * CHARACTER C SVG: B-BOY RIBS (Upside-Down Headspin for Brabus vs Floating Heart Balloon for Thinking of You vs B-Boy Freeze!)
+ * CHARACTER C SVG: B-BOY RIBS (Headspin, One-Hand Freeze, Windmill, Wave, Heart Balloon & Mind Postures!)
  */
-function BboySkeletonSVG({ move = 'balloon', danceStyle = 'lofi' }) {
-  const isHyper = danceStyle === 'hyper' || move === 'headspin';
+function BboySkeletonSVG({
+  move = 'balloon',
+  danceStyle = 'lofi',
+  intent = 'showoff',
+  danceMove = 'windmill',
+  napping = false,
+}) {
+  const activeMove = danceMove || move;
+  const isPanic = intent === 'witness_panic';
+  const isAngry = intent === 'just_reassembled';
+  const isSprint = intent === 'chase' || intent === 'flee' || intent === 'grudge_dodge';
+  const isChat = intent === 'chat';
+  const isSplit =
+    (activeMove === 'headspin' || activeMove === 'windmill') &&
+    !isPanic &&
+    !isAngry &&
+    !isChat &&
+    !napping;
+  const isFreeze = activeMove === 'freeze' && !isPanic && !isAngry && !isChat && !napping;
+  const isBalloon = activeMove === 'balloon' && !isPanic && !isAngry && !isSprint && !napping;
+  const isHyper = danceStyle === 'hyper' || activeMove === 'headspin';
   const isRomantic = danceStyle === 'lofi' && !isHyper;
-  const isDisco = danceStyle === 'disco' || move === 'freeze';
-  const isParty = danceStyle === 'party';
 
-  const animClass = isHyper
-    ? 'animate-skel-headspin'
-    : isParty
-    ? 'animate-skel-party-bhangra'
-    : isDisco
-    ? 'animate-skel-spin'
-    : 'animate-skel-romantic-sway';
+  const animClass = resolveCharacterAnimClass(intent, activeMove, napping, BBOY_MOVE_ANIMS);
+
+  const armLPath = isPanic
+    ? 'M43 54 L26 42 L33 32'
+    : isAngry
+    ? 'M43 54 L30 64 L44 74'
+    : isBalloon
+    ? 'M43 54 L26 42 L22 32'
+    : 'M43 54 L25 64 L18 74';
+
+  const armRPath = isPanic
+    ? 'M65 54 L82 42 L75 32'
+    : isAngry
+    ? 'M65 54 L78 64 L64 74'
+    : 'M65 54 L82 44 L89 34';
 
   return (
     <svg
@@ -1736,24 +1917,12 @@ function BboySkeletonSVG({ move = 'balloon', danceStyle = 'lofi' }) {
       className={`die-cut-skeleton select-none overflow-visible ${animClass}`}
       style={{ background: 'transparent' }}
     >
-      {/* Floating Pink Party Balloon + Hearts when in Romantic ('lofi') mode! */}
-      {isRomantic && (
+      {isSprint && <SpeedTrailLines color="#10B981" />}
+
+      {isBalloon && (
         <g>
-          <path
-            d="M22 32 Q18 20 24 10"
-            stroke="#18181b"
-            strokeWidth="1.8"
-            fill="none"
-          />
-          <ellipse
-            cx="24"
-            cy="2"
-            rx="11"
-            ry="13"
-            fill="#EC4899"
-            stroke="#18181b"
-            strokeWidth="2.2"
-          />
+          <path d="M22 32 Q18 20 24 10" stroke="#18181b" strokeWidth="1.8" fill="none" />
+          <ellipse cx="24" cy="2" rx="11" ry="13" fill="#EC4899" stroke="#18181b" strokeWidth="2.2" />
           <text x="19" y="6" fill="#FAF8F4" fontSize="11" fontWeight="bold">
             ♥
           </text>
@@ -1766,10 +1935,9 @@ function BboySkeletonSVG({ move = 'balloon', danceStyle = 'lofi' }) {
         </g>
       )}
 
-      {/* B-Boy Group (Tilted when doing a 'freeze' pose!) */}
-      <g transform={isDisco ? 'rotate(-28 55 65)' : undefined}>
-        {/* Skull with Neon Shutter Shades */}
-        <g className="animate-skel-head">
+      {/* B-Boy Group (Tilts dramatically on one-hand handstand freeze!) */}
+      <g transform={isFreeze ? 'rotate(-36 55 65)' : undefined}>
+        <g className={napping ? '' : 'animate-skel-head'}>
           <rect
             x="37"
             y="24"
@@ -1786,78 +1954,38 @@ function BboySkeletonSVG({ move = 'balloon', danceStyle = 'lofi' }) {
             stroke="#18181b"
             strokeWidth="2"
           />
-          <rect
-            x="40"
-            y="32"
-            width="12"
-            height="6.5"
-            rx="1.5"
-            fill="#18181b"
-            stroke={isHyper ? '#FACC15' : '#10B981'}
-            strokeWidth="1.5"
-          />
-          <rect
-            x="56"
-            y="32"
-            width="12"
-            height="6.5"
-            rx="1.5"
-            fill="#18181b"
-            stroke={isHyper ? '#FACC15' : '#10B981'}
-            strokeWidth="1.5"
-          />
-          <line x1="52" y1="35" x2="56" y2="35" stroke="#18181b" strokeWidth="2" />
-          <path
-            d="M48 43 Q54 46 60 43"
-            stroke="#18181b"
-            strokeWidth="2"
-            strokeLinecap="round"
-            fill="none"
+          <SkeletonFace
+            cxL={46}
+            cxR={62}
+            cy={35}
+            mouthY={43}
+            intent={intent}
+            napping={napping}
+            danceStyle={danceStyle}
+            danceMove={activeMove}
+            shadesColor={isHyper ? '#FACC15' : '#10B981'}
           />
         </g>
 
-        {/* Arms */}
-        <path
-          d={isRomantic ? 'M43 54 L26 42 L22 32' : 'M43 54 L25 64 L18 74'}
-          stroke="#18181b"
-          strokeWidth="4.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d={isRomantic ? 'M43 54 L26 42 L22 32' : 'M43 54 L25 64 L18 74'}
-          stroke="#FAF8F4"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        {/* Left Arm */}
+        <path d={armLPath} stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={armLPath} stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
         <circle
-          cx={isRomantic ? '22' : '18'}
-          cy={isRomantic ? '32' : '74'}
+          cx={isPanic ? 33 : isAngry ? 44 : isBalloon ? 22 : 18}
+          cy={isPanic ? 32 : isAngry ? 74 : isBalloon ? 32 : 74}
           r="3.8"
           fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#10B981'}
           stroke="#18181b"
           strokeWidth="1.9"
         />
 
-        <g className="animate-skel-arm-r">
-          <path
-            d="M65 54 L82 44 L89 34"
-            stroke="#18181b"
-            strokeWidth="4.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M65 54 L82 44 L89 34"
-            stroke="#FAF8F4"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+        {/* Right Arm */}
+        <g className={!napping && (isChat || activeMove === 'wave') && !isPanic && !isAngry ? 'animate-skel-arm-r' : ''}>
+          <path d={armRPath} stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={armRPath} stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
           <circle
-            cx="90"
-            cy="33"
+            cx={isPanic ? 75 : isAngry ? 64 : 90}
+            cy={isPanic ? 32 : isAngry ? 74 : 33}
             r="3.8"
             fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#10B981'}
             stroke="#18181b"
@@ -1868,406 +1996,283 @@ function BboySkeletonSVG({ move = 'balloon', danceStyle = 'lofi' }) {
         {/* Ribcage */}
         <line x1="54" y1="49" x2="54" y2="78" stroke="#18181b" strokeWidth="4.6" />
         <line x1="54" y1="49" x2="54" y2="78" stroke="#FAF8F4" strokeWidth="2" />
-        <rect
-          x="44"
-          y="56"
-          width="20"
-          height="4.4"
-          rx="2.2"
-          fill="#FAF8F4"
-          stroke="#18181b"
-          strokeWidth="1.9"
-        />
-        <rect
-          x="46"
-          y="63"
-          width="16"
-          height="4.2"
-          rx="2"
-          fill="#FAF8F4"
-          stroke="#18181b"
-          strokeWidth="1.9"
-        />
-        <ellipse
-          cx="54"
-          cy="76"
-          rx="9.5"
-          ry="3.8"
-          fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#10B981'}
-          stroke="#18181b"
-          strokeWidth="2"
-        />
+        <rect x="44" y="56" width="20" height="4.4" rx="2.2" fill="#FAF8F4" stroke="#18181b" strokeWidth="1.9" />
+        <rect x="46" y="63" width="16" height="4.2" rx="2" fill="#FAF8F4" stroke="#18181b" strokeWidth="1.9" />
+        <ellipse cx="54" cy="76" rx="9.5" ry="3.8" fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#10B981'} stroke="#18181b" strokeWidth="2" />
 
-        {/* Wide V-Split Breakdance Legs (for Brabus headspin) vs Floating Legs (for Thinking of You) */}
-        <g className="animate-skel-leg-l">
-          <path
-            d={isHyper ? 'M48 78 L28 96 L22 106' : 'M48 78 L42 94 L45 106'}
-            stroke="#18181b"
-            strokeWidth="4.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d={isHyper ? 'M48 78 L28 96 L22 106' : 'M48 78 L42 94 L45 106'}
-            stroke="#FAF8F4"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <rect
-            x={isHyper ? '15' : '38'}
-            y="104"
-            width="11"
-            height="5"
-            rx="2.5"
-            fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#10B981'}
-            stroke="#18181b"
-            strokeWidth="1.9"
-          />
+        {/* Breakdance Legs (Wide V-split on headspin/windmill vs bouncy/floating otherwise) */}
+        <g className={napping ? '' : 'animate-skel-leg-l'}>
+          <path d={isSplit ? 'M48 78 L28 96 L22 106' : 'M48 78 L42 94 L45 106'} stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={isSplit ? 'M48 78 L28 96 L22 106' : 'M48 78 L42 94 L45 106'} stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x={isSplit ? 15 : 38} y="104" width="11" height="5" rx="2.5" fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#10B981'} stroke="#18181b" strokeWidth="1.9" />
         </g>
-        <g className="animate-skel-leg-r">
-          <path
-            d={isHyper ? 'M60 78 L80 96 L86 106' : 'M60 78 L66 94 L63 106'}
-            stroke="#18181b"
-            strokeWidth="4.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d={isHyper ? 'M60 78 L80 96 L86 106' : 'M60 78 L66 94 L63 106'}
-            stroke="#FAF8F4"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <rect
-            x={isHyper ? '82' : '59'}
-            y="104"
-            width="11"
-            height="5"
-            rx="2.5"
-            fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#10B981'}
-            stroke="#18181b"
-            strokeWidth="1.9"
-          />
+        <g className={napping ? '' : 'animate-skel-leg-r'}>
+          <path d={isSplit ? 'M60 78 L80 96 L86 106' : 'M60 78 L66 94 L63 106'} stroke="#18181b" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={isSplit ? 'M60 78 L80 96 L86 106' : 'M60 78 L66 94 L63 106'} stroke="#FAF8F4" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x={isSplit ? 82 : 59} y="104" width="11" height="5" rx="2.5" fill={isHyper ? '#FACC15' : isRomantic ? '#EC4899' : '#10B981'} stroke="#18181b" strokeWidth="1.9" />
         </g>
       </g>
     </svg>
   );
 }
 
-function randomInRange(min, max) {
-  return min + Math.random() * (max - min);
+function extractCrewVisuals(crew) {
+  return {
+    skater: {
+      facing: crew.skater.facing,
+      trick: crew.skater.trick,
+      intent: crew.skater.intent,
+      danceMove: crew.skater.danceMove,
+      hiding: crew.skater.hiding,
+      napping: crew.skater.napping,
+      phrase: crew.skater.phrase,
+    },
+    detective: {
+      facing: crew.detective.facing,
+      inspecting: crew.detective.inspecting,
+      intent: crew.detective.intent,
+      danceMove: crew.detective.danceMove,
+      hiding: crew.detective.hiding,
+      napping: crew.detective.napping,
+      phrase: crew.detective.phrase,
+    },
+    bboy: {
+      facing: crew.bboy.facing,
+      move: crew.bboy.move,
+      intent: crew.bboy.intent,
+      danceMove: crew.bboy.danceMove,
+      hiding: crew.bboy.hiding,
+      napping: crew.bboy.napping,
+      phrase: crew.bboy.phrase,
+    },
+  };
+}
+
+function crewVisualsChanged(prev, next) {
+  const keys = ['skater', 'detective', 'bboy'];
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const a = prev[k];
+    const b = next[k];
+    if (
+      a.facing !== b.facing ||
+      a.intent !== b.intent ||
+      a.danceMove !== b.danceMove ||
+      a.hiding !== b.hiding ||
+      a.napping !== b.napping ||
+      a.phrase !== b.phrase ||
+      a.trick !== b.trick ||
+      a.inspecting !== b.inspecting ||
+      a.move !== b.move
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
- * INTELLIGENT BACKGROUND SKELETON CREW (z-0, behind content cards)
- * Synchronized with the active song (`danceStyle`) so each track has a completely different vibe!
+ * INDEPENDENT AUTONOMOUS BACKGROUND SKELETON CREW (z-0, behind content cards)
+ * Driven by continuous 60fps 2D steering physics, internal moods, energy/naps,
+ * buddy conversations, games of tag, portfolio section reading, and pop panic.
  */
 export function BackgroundSkeletonStickers({
   danceStyle = 'lofi',
   isPlaying = true,
   songTitle = '',
 }) {
-  const mouseRef = useRef({ x: 50, y: 50 });
+  const initialW = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const initialH = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+  const crewRef = useRef(null);
+  if (!crewRef.current) {
+    crewRef.current = createInitialCrewState(initialW, initialH, danceStyle);
+  }
+
+  const worldRef = useRef({
+    vw: initialW,
+    vh: initialH,
+    mouseX: initialW * 0.5,
+    mouseY: initialH * 0.5,
+    cursorSpeed: 0,
+    lastMouseMoveAt: typeof performance !== 'undefined' ? performance.now() : 0,
+    section: 'hero',
+    danceStyle,
+    isPlaying,
+    userIdleMs: 0,
+  });
+
   const skaterPosRef = useRef(null);
   const detectivePosRef = useRef(null);
   const bboyPosRef = useRef(null);
-  const busyRef = useRef({ skater: false, detective: false, bboy: false });
-  const inflatingMapRef = useRef({ skater: false, detective: false, bboy: false });
-  const poppedMapRef = useRef({ skater: false, detective: false, bboy: false });
 
-  // 1. Ollie the Skateboarder State
-  const [skater, setSkater] = useState({
-    x: 10,
-    y: 26,
-    facing: 1,
-    trick: danceStyle === 'hyper',
-    hiding: false,
-    phrase: 'BRABUS KICKFLIP!! 🔥🛹',
-    duration: 2.4,
-  });
+  const initialVisuals = extractCrewVisuals(crewRef.current);
+  const visualsRef = useRef(initialVisuals);
+  const [visuals, setVisuals] = useState(initialVisuals);
 
-  // 2. Sherlock Bones State
-  const [detective, setDetective] = useState({
-    x: 86,
-    y: 52,
-    facing: -1,
-    inspecting: danceStyle === 'lofi',
-    hiding: false,
-    phrase: 'BRABUS BASS DROP!! 🔊🔥',
-    duration: 2.8,
-  });
-
-  // 3. B-Boy Ribs State
-  const [bboy, setBboy] = useState({
-    x: 14,
-    y: 78,
-    facing: 1,
-    move: danceStyle === 'hyper' ? 'headspin' : 'balloon',
-    hiding: false,
-    phrase: 'TURBO HEADSPIN!! 🌪️🔥',
-    duration: 3.0,
-  });
-
-  // Lock a roaming skeleton at its live viewport spot as soon as the cursor begins inflating it
-  const freezeSkeletonAtCurrentPos = (ref, setter) => {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect || !window.innerWidth || !window.innerHeight) return;
-    const vw = ((rect.left + rect.width / 2) / window.innerWidth) * 100;
-    const vh = ((rect.top + rect.height / 2) / window.innerHeight) * 100;
-    setter((prev) => ({
-      ...prev,
-      x: vw,
-      y: vh,
-      duration: 0.08,
-    }));
-  };
-
-  const handleInflatingChange = (key, ref, setter, inflating) => {
-    inflatingMapRef.current[key] = inflating;
-    busyRef.current[key] = inflating || poppedMapRef.current[key];
-    if (inflating) {
-      freezeSkeletonAtCurrentPos(ref, setter);
+  const applyPositionsToDom = () => {
+    const crew = crewRef.current;
+    const entries = [
+      [skaterPosRef.current, crew.skater, 0.85],
+      [detectivePosRef.current, crew.detective, 0.82],
+      [bboyPosRef.current, crew.bboy, 0.85],
+    ];
+    for (let i = 0; i < entries.length; i++) {
+      const [el, agent, hideScale] = entries[i];
+      if (!el) continue;
+      const scale = agent.hiding ? hideScale : 1;
+      el.style.transform = `translate3d(${agent.x.toFixed(1)}px, ${agent.y.toFixed(
+        1
+      )}px, 0) translate(-50%, -50%) scale(${scale})`;
     }
   };
 
-  const handlePoppedChange = (key, popped) => {
-    poppedMapRef.current[key] = popped;
-    busyRef.current[key] = inflatingMapRef.current[key] || popped;
-  };
+  // Set exact starting screen transforms before first browser paint
+  useLayoutEffect(() => {
+    applyPositionsToDom();
+  }, []);
 
-  // Immediately transform all 3 skeletons' moves & phrases whenever the song changes!
+  // Sync song / play-pause changes into the autonomous brain
   useEffect(() => {
-    if (!isPlaying) {
-      setSkater((p) => ({ ...p, trick: false, phrase: 'music paused 🛹🎵' }));
-      setDetective((p) => ({ ...p, inspecting: true, phrase: 'waiting for music 🔍' }));
-      setBboy((p) => ({ ...p, move: 'freeze', phrase: 'paused freeze! ⏸' }));
-      return;
-    }
-
-    if (danceStyle === 'hyper') {
-      setSkater((p) => ({
-        ...p,
-        trick: true,
-        hiding: false,
-        phrase: 'BRABUS KICKFLIP!! 🔥🛹',
-        duration: busyRef.current.skater ? p.duration : 2.0,
-      }));
-      setDetective((p) => ({
-        ...p,
-        inspecting: false,
-        hiding: false,
-        phrase: 'BRABUS BASS DROP!! 🔊🔥',
-        duration: busyRef.current.detective ? p.duration : 2.2,
-      }));
-      setBboy((p) => ({
-        ...p,
-        move: 'headspin',
-        hiding: false,
-        phrase: 'BRABUS HEADSPIN!! 🌪️🔥',
-        duration: busyRef.current.bboy ? p.duration : 2.2,
-      }));
-    } else if (danceStyle === 'disco') {
-      setSkater((p) => ({ ...p, trick: true, hiding: false, phrase: '360 DISCO SPIN!! 🕺🛹' }));
-      setDetective((p) => ({ ...p, inspecting: false, hiding: false, phrase: 'DISCO FEVER!! 🕺✨' }));
-      setBboy((p) => ({ ...p, move: 'freeze', hiding: false, phrase: 'DISCO B-BOY FREEZE!! 🪩' }));
-    } else if (danceStyle === 'party') {
-      setSkater((p) => ({ ...p, trick: true, hiding: false, phrase: 'BHANGRA PARTY!! 🥁🛹' }));
-      setDetective((p) => ({ ...p, inspecting: false, hiding: false, phrase: 'HANDS UP PARTY!! 🙌🎉' }));
-      setBboy((p) => ({ ...p, move: 'headspin', hiding: false, phrase: 'PARTY WINDMILL!! 🎉🌪️' }));
-    } else {
-      // 'lofi' -> Thinking of You - AP Dhillon (Romantic / Smooth Sway & Floating Hearts!)
-      setSkater((p) => ({
-        ...p,
-        trick: false,
-        hiding: false,
-        phrase: 'thinking of you~ 💖🛹',
-        duration: busyRef.current.skater ? p.duration : 4.8,
-      }));
-      setDetective((p) => ({
-        ...p,
-        inspecting: true,
-        hiding: false,
-        phrase: 'AP Dhillon vibes 💖🌹',
-        duration: busyRef.current.detective ? p.duration : 5.0,
-      }));
-      setBboy((p) => ({
-        ...p,
-        move: 'balloon',
-        hiding: false,
-        phrase: 'floating in love~ 🎈💖',
-        duration: busyRef.current.bboy ? p.duration : 5.2,
-      }));
-    }
+    const now = typeof performance !== 'undefined' ? performance.now() : 0;
+    worldRef.current.danceStyle = danceStyle;
+    worldRef.current.isPlaying = isPlaying;
+    syncCrewMusicVibe(crewRef.current, danceStyle, isPlaying, now);
   }, [danceStyle, isPlaying, songTitle]);
 
-  // Track mouse position & scroll events
+  // Listen to page interactions (mouse movement, clicks, scroll, resize, foreground pops)
   useEffect(() => {
-    let scrollTimeout = null;
+    let lastScrollY = window.scrollY;
+    let lastMouseSampleTime = performance.now();
 
     const handleMouseMove = (e) => {
-      const vw = (e.clientX / window.innerWidth) * 100;
-      const vh = (e.clientY / window.innerHeight) * 100;
-      mouseRef.current = { x: vw, y: vh };
+      const now = performance.now();
+      const dtSec = Math.max(0.016, (now - lastMouseSampleTime) / 1000);
+      lastMouseSampleTime = now;
+
+      const world = worldRef.current;
+      const dist = Math.hypot(e.clientX - world.mouseX, e.clientY - world.mouseY);
+      world.cursorSpeed = Math.min(2600, dist / dtSec);
+      world.mouseX = e.clientX;
+      world.mouseY = e.clientY;
+      world.lastMouseMoveAt = now;
+    };
+
+    const handlePointerDown = (e) => {
+      const now = performance.now();
+      worldRef.current.mouseX = e.clientX;
+      worldRef.current.mouseY = e.clientY;
+      worldRef.current.lastMouseMoveAt = now;
+      notifyUserClick(crewRef.current, e.clientX, e.clientY, now);
     };
 
     const handleScroll = () => {
-      if (busyRef.current.skater) return;
-      setSkater((prev) =>
-        busyRef.current.skater
-          ? prev
-          : {
-              ...prev,
-              trick: true,
-              phrase: 'woah fast scroll!! 🛹💨',
-            }
+      const now = performance.now();
+      const curY = window.scrollY;
+      const deltaY = Math.abs(curY - lastScrollY);
+      lastScrollY = curY;
+
+      worldRef.current.section = detectVisibleSection();
+      if (deltaY > 45) {
+        notifyFastScroll(crewRef.current, worldRef.current.danceStyle, now);
+      }
+    };
+
+    const handleResize = () => {
+      worldRef.current.vw = window.innerWidth;
+      worldRef.current.vh = window.innerHeight;
+    };
+
+    const handleGlobalPop = (e) => {
+      const id = e.detail?.id;
+      if (!id || id === 'skater' || id === 'detective' || id === 'bboy') return;
+      notifyBuddyPopped(
+        crewRef.current,
+        id,
+        e.detail?.x ?? worldRef.current.vw * 0.5,
+        e.detail?.y ?? worldRef.current.vh * 0.5,
+        performance.now()
       );
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        setSkater((prev) =>
-          busyRef.current.skater
-            ? prev
-            : { ...prev, trick: danceStyle === 'hyper' }
-        );
-      }, 1200);
     };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('pointerdown', handlePointerDown, { passive: true });
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('skeleton-popped', handleGlobalPop);
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('scroll', handleScroll);
-      clearTimeout(scrollTimeout);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('skeleton-popped', handleGlobalPop);
     };
-  }, [danceStyle]);
+  }, []);
 
-  // Song-Aware AI loop for #1: Ollie the Skateboarder
+  // Single continuous 60fps autonomous steering loop (direct DOM transforms, state only on phrase/pose changes)
   useEffect(() => {
-    if (!isPlaying) return;
+    let rafId = null;
+    let lastTime = performance.now();
+    let lastSectionCheck = 0;
 
-    const phrasesByStyle = {
-      hyper: ['BRABUS KICKFLIP!! 🔥🛹', 'HEAVY BASS OLLIE ⚡', 'TURBO STREET MODE 🔥', '360 BOARD FLIP!! 🛹'],
-      lofi: ['thinking of you~ 💖🛹', 'AP Dhillon night cruise 🌙', 'smooth romantic glide 💖', 'late night feels ✨'],
-      disco: ['360 DISCO SPIN!! 🕺🛹', 'funky board slide 🪩', 'disco fever!! ✨'],
-      party: ['BHANGRA SKATE!! 🥁🎉', 'FULL PARTY MODE!! 💀🎉', 'hands up!! 🙌'],
+    const frame = (now) => {
+      const dt = Math.min(0.05, Math.max(0.001, (now - lastTime) / 1000));
+      lastTime = now;
+
+      const world = worldRef.current;
+      world.cursorSpeed *= Math.max(0, 1 - dt * 6);
+      world.userIdleMs = now - world.lastMouseMoveAt;
+
+      if (now - lastSectionCheck > 700) {
+        lastSectionCheck = now;
+        world.section = detectVisibleSection();
+      }
+
+      stepCrewPhysics(crewRef.current, world, dt, now);
+      applyPositionsToDom();
+
+      const nextVisuals = extractCrewVisuals(crewRef.current);
+      if (crewVisualsChanged(visualsRef.current, nextVisuals)) {
+        visualsRef.current = nextVisuals;
+        setVisuals(nextVisuals);
+      }
+
+      rafId = requestAnimationFrame(frame);
     };
-    const activePhrases = phrasesByStyle[danceStyle] || phrasesByStyle.lofi;
 
-    const id = setInterval(
-      () => {
-        setSkater((prev) => {
-          if (busyRef.current.skater) return prev;
-          const goRight = prev.x < 50;
-          const passBehindCard = Math.random() < 0.25;
-          const nextX = passBehindCard
-            ? randomInRange(38, 62)
-            : goRight
-            ? randomInRange(78, 93)
-            : randomInRange(6, 20);
-          const nextY = randomInRange(14, 86);
-          const doTrick = danceStyle === 'hyper' ? true : !passBehindCard && Math.random() < 0.25;
-
-          return {
-            x: nextX,
-            y: nextY,
-            facing: nextX >= prev.x ? 1 : -1,
-            trick: doTrick,
-            hiding: passBehindCard,
-            phrase: activePhrases[Math.floor(Math.random() * activePhrases.length)],
-            duration: danceStyle === 'hyper' ? randomInRange(1.8, 2.8) : randomInRange(4.0, 5.5),
-          };
-        });
-      },
-      danceStyle === 'hyper' ? 2600 : 4200
-    );
-    return () => clearInterval(id);
-  }, [danceStyle, isPlaying]);
-
-  // Song-Aware AI loop for #2: Sherlock Bones (Bass Bouncer vs Romantic Rose Daydreamer)
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    const phrasesByStyle = {
-      hyper: ['BRABUS BASS DROP!! 🔊🔥', 'PUMP IT UP!! 🙌⚡', 'HEAVY BASS BOUNCE 🔥', 'BOSS VIBE ONLY 😎'],
-      lofi: ['thinking of you.. 💖🌹', 'AP Dhillon vibes 🌙🎶', 'holding a rose for u 🌹', 'late night feelings 💌'],
-      disco: ['DISCO DETECTIVE!! 🕺✨', '360 spin move!! 🪩', 'stayin’ alive ♪'],
-      party: ['HANDS UP PARTY!! 🙌🎉', 'RATTLE DEM BONES!! 🦴🎉', 'party bounce!! 🥁'],
+    rafId = requestAnimationFrame(frame);
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
-    const activePhrases = phrasesByStyle[danceStyle] || phrasesByStyle.lofi;
+  }, []);
 
-    const id = setInterval(
-      () => {
-        setDetective((prev) => {
-          if (busyRef.current.detective) return prev;
-          const userY = mouseRef.current.y;
-          const targetY = Math.min(86, Math.max(14, userY + randomInRange(-16, 16)));
-          const leftMargin = mouseRef.current.x < 50;
-          const targetX = leftMargin ? randomInRange(7, 21) : randomInRange(79, 93);
+  const handleAgentInflating = (id, inflating) => {
+    const agent = crewRef.current[id];
+    if (!agent) return;
+    const now = performance.now();
+    if (inflating) {
+      agent.intent = 'inflating';
+      agent.vx = 0;
+      agent.vy = 0;
+      agent.napping = false;
+      agent.pendingReply = null;
+    } else if (agent.intent === 'inflating') {
+      agent.intent = 'roam';
+      agent.intentUntil = now + 1800;
+    }
+  };
 
-          return {
-            x: targetX,
-            y: targetY,
-            facing: targetX < 50 ? 1 : -1,
-            inspecting: danceStyle === 'lofi',
-            hiding: false,
-            phrase: activePhrases[Math.floor(Math.random() * activePhrases.length)],
-            duration: danceStyle === 'hyper' ? randomInRange(2.0, 3.0) : randomInRange(4.2, 5.6),
-          };
-        });
-      },
-      danceStyle === 'hyper' ? 2800 : 4500
-    );
-    return () => clearInterval(id);
-  }, [danceStyle, isPlaying]);
-
-  // Song-Aware AI loop for #3: B-Boy Ribs (Upside-Down Headspin vs Heart Balloon Float)
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    const styleConfig = {
-      hyper: {
-        move: 'headspin',
-        phrases: ['BRABUS HEADSPIN!! 🌪️🔥', 'TURBO WINDMILL!! ⚡', 'UPSIDE DOWN SPIN!! 🌪️'],
-      },
-      lofi: {
-        move: 'balloon',
-        phrases: ['floating in love~ 🎈💖', 'thinking of you~ 🌙💖', 'heart balloon float ✨'],
-      },
-      disco: {
-        move: 'freeze',
-        phrases: ['DISCO B-BOY FREEZE!! 🪩', '360 DISCO SPIN!! 🕺✨', 'funky freeze!! ⚡'],
-      },
-      party: {
-        move: 'headspin',
-        phrases: ['PARTY WINDMILL!! 🎉🌪️', 'FULL BONE PARTY!! 💀🎉', 'bhangra spin!! 🥁'],
-      },
-    };
-    const active = styleConfig[danceStyle] || styleConfig.lofi;
-
-    const id = setInterval(
-      () => {
-        setBboy((prev) => {
-          if (busyRef.current.bboy) return prev;
-          const nextY =
-            active.move === 'balloon' ? randomInRange(16, 42) : randomInRange(52, 86);
-          const nextX =
-            Math.random() < 0.5 ? randomInRange(7, 22) : randomInRange(78, 92);
-          return {
-            x: nextX,
-            y: nextY,
-            facing: nextX >= prev.x ? 1 : -1,
-            move: active.move,
-            hiding: false,
-            phrase: active.phrases[Math.floor(Math.random() * active.phrases.length)],
-            duration: danceStyle === 'hyper' ? 2.4 : 4.8,
-          };
-        });
-      },
-      danceStyle === 'hyper' ? 3000 : 4600
-    );
-    return () => clearInterval(id);
-  }, [danceStyle, isPlaying]);
+  const handleAgentPopped = (id, popped) => {
+    const agent = crewRef.current[id];
+    if (!agent) return;
+    const now = performance.now();
+    if (popped) {
+      notifyBuddyPopped(crewRef.current, id, agent.x, agent.y, now);
+    } else {
+      notifyBuddyReassembled(crewRef.current, id, worldRef.current, now);
+    }
+  };
 
   return (
     <div
@@ -2280,129 +2285,163 @@ export function BackgroundSkeletonStickers({
         ref={skaterPosRef}
         style={{
           position: 'absolute',
-          left: `${skater.x}vw`,
-          top: `${skater.y}vh`,
-          transform: `translate(-50%, -50%) scale(${skater.hiding ? 0.85 : 1})`,
-          transition: `left ${skater.duration}s cubic-bezier(0.34, 1.2, 0.64, 1), top ${skater.duration}s cubic-bezier(0.34, 1.2, 0.64, 1)`,
+          left: 0,
+          top: 0,
+          willChange: 'transform',
           background: 'transparent',
         }}
         className="flex flex-col items-center"
       >
         <BalloonPopWrapper
+          skeletonId="skater"
           accent="#FACC15"
-          disabled={skater.hiding}
-          onInflatingChange={(inf) =>
-            handleInflatingChange('skater', skaterPosRef, setSkater, inf)
-          }
-          onPoppedChange={(pop) => handlePoppedChange('skater', pop)}
+          disabled={visuals.skater.hiding}
+          onInflatingChange={(inf) => handleAgentInflating('skater', inf)}
+          onPoppedChange={(pop) => handleAgentPopped('skater', pop)}
         >
           {({ inflatePhrase }) => (
-            <div className="flex flex-col items-center">
+            <div className="relative flex flex-col items-center">
               <span
                 className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-yellow-300 -mb-1 whitespace-nowrap select-none"
                 style={{
-                  opacity: skater.hiding ? 0 : 0.95,
+                  opacity: visuals.skater.hiding ? 0 : 0.95,
                   textShadow: '1.5px 1.5px 0px #FAF8F4, -1.5px -1.5px 0px #FAF8F4',
                 }}
               >
-                {inflatePhrase || skater.phrase}
+                {inflatePhrase || visuals.skater.phrase}
               </span>
+              {visuals.skater.napping && !inflatePhrase && (
+                <span className="font-mono text-[10px] font-black text-amber-600 dark:text-yellow-300 animate-pulse -mb-1">
+                  Zzz
+                </span>
+              )}
               <div
                 style={{
-                  transform: `scaleX(${skater.facing})`,
+                  transform: `scaleX(${visuals.skater.facing})`,
                   transition: 'transform 0.25s ease',
                 }}
               >
-                <SkaterSkeletonSVG trick={skater.trick} danceStyle={danceStyle} />
+                <div className={visuals.skater.napping ? 'animate-skel-nap' : ''}>
+                  <SkaterSkeletonSVG
+                    trick={visuals.skater.trick}
+                    danceStyle={danceStyle}
+                    intent={visuals.skater.intent}
+                    danceMove={visuals.skater.danceMove}
+                    napping={visuals.skater.napping}
+                  />
+                </div>
               </div>
             </div>
           )}
         </BalloonPopWrapper>
       </div>
 
-      {/* 2. SHERLOCK BONES (BASS BOUNCER / ROMANTIC ROSE DAYDREAMER) */}
+      {/* 2. SHERLOCK BONES (NOSY SECTION INSPECTOR & CURSOR CURIOUS) */}
       <div
         ref={detectivePosRef}
         style={{
           position: 'absolute',
-          left: `${detective.x}vw`,
-          top: `${detective.y}vh`,
-          transform: `translate(-50%, -50%) scale(${detective.hiding ? 0.82 : 1})`,
-          transition: `left ${detective.duration}s ease-in-out, top ${detective.duration}s ease-in-out`,
+          left: 0,
+          top: 0,
+          willChange: 'transform',
           background: 'transparent',
         }}
         className="flex flex-col items-center"
       >
         <BalloonPopWrapper
+          skeletonId="detective"
           accent="#38BDF8"
-          disabled={detective.hiding}
-          onInflatingChange={(inf) =>
-            handleInflatingChange('detective', detectivePosRef, setDetective, inf)
-          }
-          onPoppedChange={(pop) => handlePoppedChange('detective', pop)}
+          disabled={visuals.detective.hiding}
+          onInflatingChange={(inf) => handleAgentInflating('detective', inf)}
+          onPoppedChange={(pop) => handleAgentPopped('detective', pop)}
         >
           {({ inflatePhrase }) => (
-            <div className="flex flex-col items-center">
+            <div className="relative flex flex-col items-center">
               <span
                 className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-sky-300 -mb-1 whitespace-nowrap select-none"
                 style={{
-                  opacity: detective.hiding ? 0 : 0.95,
+                  opacity: visuals.detective.hiding ? 0 : 0.95,
                   textShadow: '1.5px 1.5px 0px #FAF8F4, -1.5px -1.5px 0px #FAF8F4',
                 }}
               >
-                {inflatePhrase || detective.phrase}
+                {inflatePhrase || visuals.detective.phrase}
               </span>
+              {visuals.detective.napping && !inflatePhrase && (
+                <span className="font-mono text-[10px] font-black text-sky-600 dark:text-sky-300 animate-pulse -mb-1">
+                  Zzz
+                </span>
+              )}
               <div
                 style={{
-                  transform: `scaleX(${detective.facing})`,
+                  transform: `scaleX(${visuals.detective.facing})`,
                   transition: 'transform 0.25s ease',
                 }}
               >
-                <DetectiveSkeletonSVG inspecting={detective.inspecting} danceStyle={danceStyle} />
+                <div className={visuals.detective.napping ? 'animate-skel-nap' : ''}>
+                  <DetectiveSkeletonSVG
+                    inspecting={visuals.detective.inspecting}
+                    danceStyle={danceStyle}
+                    intent={visuals.detective.intent}
+                    danceMove={visuals.detective.danceMove}
+                    napping={visuals.detective.napping}
+                  />
+                </div>
               </div>
             </div>
           )}
         </BalloonPopWrapper>
       </div>
 
-      {/* 3. B-BOY RIBS (UPSIDE-DOWN HEADSPINNER / HEART BALLOON FLOATER) */}
+      {/* 3. B-BOY RIBS (SOCIAL HYPE & NAP BUDDY) */}
       <div
         ref={bboyPosRef}
         style={{
           position: 'absolute',
-          left: `${bboy.x}vw`,
-          top: `${bboy.y}vh`,
-          transform: 'translate(-50%, -50%)',
-          transition: `left ${bboy.duration}s ease-in-out, top ${bboy.duration}s ease-in-out`,
+          left: 0,
+          top: 0,
+          willChange: 'transform',
           background: 'transparent',
         }}
         className="flex flex-col items-center"
       >
         <BalloonPopWrapper
+          skeletonId="bboy"
           accent="#10B981"
-          disabled={bboy.hiding}
-          onInflatingChange={(inf) =>
-            handleInflatingChange('bboy', bboyPosRef, setBboy, inf)
-          }
-          onPoppedChange={(pop) => handlePoppedChange('bboy', pop)}
+          disabled={visuals.bboy.hiding}
+          onInflatingChange={(inf) => handleAgentInflating('bboy', inf)}
+          onPoppedChange={(pop) => handleAgentPopped('bboy', pop)}
         >
           {({ inflatePhrase }) => (
-            <div className="flex flex-col items-center">
+            <div className="relative flex flex-col items-center">
               <span
                 className="font-handwritten text-xs sm:text-sm font-bold text-zinc-800 dark:text-emerald-300 -mb-1 whitespace-nowrap select-none"
                 style={{
+                  opacity: visuals.bboy.hiding ? 0 : 0.95,
                   textShadow: '1.5px 1.5px 0px #FAF8F4, -1.5px -1.5px 0px #FAF8F4',
                 }}
               >
-                {inflatePhrase || bboy.phrase}
+                {inflatePhrase || visuals.bboy.phrase}
               </span>
+              {visuals.bboy.napping && !inflatePhrase && (
+                <span className="font-mono text-[10px] font-black text-emerald-600 dark:text-emerald-300 animate-pulse -mb-1">
+                  Zzz
+                </span>
+              )}
               <div
                 style={{
-                  transform: `scaleX(${bboy.facing})`,
+                  transform: `scaleX(${visuals.bboy.facing})`,
                   transition: 'transform 0.25s ease',
                 }}
               >
-                <BboySkeletonSVG move={bboy.move} danceStyle={danceStyle} />
+                <div className={visuals.bboy.napping ? 'animate-skel-nap' : ''}>
+                  <BboySkeletonSVG
+                    move={visuals.bboy.move}
+                    danceStyle={danceStyle}
+                    intent={visuals.bboy.intent}
+                    danceMove={visuals.bboy.danceMove}
+                    napping={visuals.bboy.napping}
+                  />
+                </div>
               </div>
             </div>
           )}
